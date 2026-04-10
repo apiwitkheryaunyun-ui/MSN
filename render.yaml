@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: msn-messenger
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: msn-db
+          property: connectionString
+
+databases:
+  - name: msn-db
+    plan: free
+    databaseName: msn_messenger

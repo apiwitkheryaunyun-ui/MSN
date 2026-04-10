@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSN Messenger</title>
+  <link rel="stylesheet" href="css/msn.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     AUTH SCREEN
+═══════════════════════════════════════════ -->
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="butterfly-logo"></div>
+      <span class="msn-brand">MSN<sup>®</sup> Messenger</span>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="login-panel" class="auth-panel active">
+      <p class="auth-subtitle">Sign in to start</p>
+      <div class="form-row">
+        <label>E-mail address:</label>
+        <input id="login-email" type="email" autocomplete="email" placeholder="yourname@example.com" />
+      </div>
+      <div class="form-row">
+        <label>Password:</label>
+        <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <div class="form-actions">
+        <button id="login-btn" class="msn-btn primary">Sign In</button>
+        <button id="goto-register" class="msn-btn">Create Account</button>
+      </div>
+      <p id="login-error" class="auth-error"></p>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="register-panel" class="auth-panel">
+      <p class="auth-subtitle">Create a new account</p>
+      <div class="form-row">
+        <label>Username:</label>
+        <input id="reg-username" type="text" placeholder="a-z, 0-9, _ (3-30 chars)" />
+      </div>
+      <div class="form-row">
+        <label>Display Name:</label>
+        <input id="reg-display" type="text" placeholder="Your name on MSN" />
+      </div>
+      <div class="form-row">
+        <label>E-mail:</label>
+        <input id="reg-email" type="email" placeholder="yourname@example.com" />
+      </div>
+      <div class="form-row">
+        <label>Password:</label>
+        <input id="reg-password" type="password" placeholder="Min 8 characters" />
+      </div>
+      <div class="form-actions">
+        <button id="register-btn" class="msn-btn primary">Create Account</button>
+        <button id="goto-login" class="msn-btn">Back to Sign In</button>
+      </div>
+      <p id="register-error" class="auth-error"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════ -->
+<div id="app" class="app hidden">
+
+  <!-- ── BUDDY LIST WINDOW ─────────────────────────────── -->
+  <div id="buddy-window" class="msn-window buddy-window">
+    <div class="msn-titlebar">
+      <span class="win-title">MSN Messenger</span>
+      <div class="win-controls">
+        <button class="win-btn min" title="Minimize">_</button>
+        <button class="win-btn close" id="app-logout" title="Sign out">×</button>
+      </div>
+    </div>
+
+    <!-- My profile bar -->
+    <div class="my-profile-bar">
+      <div class="avatar-wrapper" id="my-avatar-wrap">
+        <img id="my-avatar" src="img/default-avatar.png" alt="avatar" class="avatar-img" />
+        <label class="avatar-upload-btn" title="Change avatar">
+          <input type="file" id="avatar-input" accept="image/*" class="hidden" />
+          📷
+        </label>
+      </div>
+      <div class="my-info">
+        <div class="my-name" id="my-display-name" contenteditable="true" spellcheck="false">Loading...</div>
+        <div class="my-status-msg" id="my-status-msg" contenteditable="true" spellcheck="false">What's your personal message?</div>
+      </div>
+      <div class="my-status-selector">
+        <select id="status-select">
+          <option value="online">🟢 Online</option>
+          <option value="away">🌙 Away</option>
+          <option value="busy">🔴 Busy</option>
+          <option value="be right back">⏳ Be Right Back</option>
+          <option value="appear offline">⚫ Appear Offline</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- My MSN ID display -->
+    <div class="id-bar">
+      <span>My MSN ID: </span>
+      <strong id="my-msn-id">----------</strong>
+      <button class="copy-id-btn" id="copy-id-btn" title="Copy ID">📋</button>
+    </div>
+
+    <!-- Add friend bar -->
+    <div class="add-friend-bar">
+      <input id="add-contact-input" type="text" maxlength="10" placeholder="Enter 10-digit MSN ID to add..." />
+      <button id="add-contact-btn" class="msn-btn small">Add</button>
+    </div>
+
+    <!-- Pending friend requests -->
+    <div id="requests-section" class="requests-section hidden">
+      <div class="section-header pending-header">⚡ Pending Requests</div>
+      <div id="requests-list"></div>
+    </div>
+
+    <!-- Contacts list -->
+    <div class="contacts-area">
+      <div class="section-header online-header">Online</div>
+      <div id="online-list" class="contact-group"></div>
+      <div class="section-header offline-header">Offline</div>
+      <div id="offline-list" class="contact-group"></div>
+    </div>
+
+    <!-- Notifications popup -->
+    <div id="notification-toast" class="notification-toast hidden"></div>
+  </div>
+
+  <!-- ── CHAT WINDOWS CONTAINER ──────────────────────────── -->
+  <div id="chat-windows"></div>
+
+</div>
+
+<!-- ── CHAT WINDOW TEMPLATE ────────────────────────────── -->
+<template id="chat-window-tpl">
+  <div class="msn-window chat-window" data-conv-user="">
+    <div class="msn-titlebar chat-titlebar">
+      <span class="chat-partner-name win-title"></span>
+      <div class="win-controls">
+        <button class="win-btn close chat-close">×</button>
+      </div>
+    </div>
+    <div class="chat-header-bar">
+      <img class="chat-partner-avatar avatar-img" src="img/default-avatar.png" alt="" />
+      <div>
+        <div class="chat-partner-display"></div>
+        <div class="chat-partner-status text-muted"></div>
+      </div>
+    </div>
+    <div class="chat-messages"></div>
+    <div class="typing-indicator hidden"><em id="typing-text"></em></div>
+    <div class="chat-toolbar">
+      <button class="chat-tool-btn nudge-btn" title="Nudge">💥</button>
+      <button class="chat-tool-btn wink-btn" title="Wink">😜</button>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" placeholder="Type a message..." rows="3"></textarea>
+      <button class="msn-btn primary send-btn">Send</button>
+    </div>
+  </div>
+</template>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

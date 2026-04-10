@@ -1,0 +1,32 @@
+{
+  "name": "MSN Messenger",
+  "description": "Real-time MSN Messenger clone with Windows XP style UI",
+  "repository": "",
+  "keywords": ["node", "express", "socket.io", "postgresql"],
+  "addons": [
+    {
+      "plan": "heroku-postgresql:essential-0"
+    }
+  ],
+  "env": {
+    "JWT_SECRET": {
+      "description": "Secret key for signing JWT tokens",
+      "generator": "secret"
+    },
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  }
+}

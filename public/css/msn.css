@@ -1,0 +1,522 @@
+/* ═══════════════════════════════════════════════════════════
+   MSN Messenger — Windows XP style CSS
+═══════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --msn-blue1: #003399;
+  --msn-blue2: #0066cc;
+  --msn-blue3: #338cdf;
+  --msn-bluebar: linear-gradient(180deg, #1b5fcc 0%, #1457ba 40%, #0f4aaa 100%);
+  --msn-titlebar: linear-gradient(180deg, #4a9bde 0%, #1e6ec4 50%, #1660bb 100%);
+  --msn-bg: #c5d8f5;
+  --msn-panel: #deeafc;
+  --msn-border: #7da7d9;
+  --msn-btn: linear-gradient(180deg, #e8f0fc 0%, #c8d8f0 100%);
+  --msn-btn-hover: linear-gradient(180deg, #f0f6ff 0%, #d4e4f8 100%);
+  --msn-btn-active: linear-gradient(180deg, #c0d0e8 0%, #b0c4e0 100%);
+  --msn-online: #00b020;
+  --msn-away: #f0a000;
+  --msn-busy: #cc0000;
+  --msn-offline: #888;
+  --shadow: 0 4px 16px rgba(0,0,80,.35);
+  --radius: 3px;
+  font-family: 'Tahoma', 'Segoe UI', sans-serif;
+  font-size: 11px;
+}
+
+body {
+  background: var(--msn-bg) url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23a0b8d8' fill-opacity='0.22'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ── Utility ──────────────────────────────────────── */
+.hidden { display: none !important; }
+.text-muted { color: #667; font-size: 10px; }
+
+/* ── Auth Screen ──────────────────────────────────── */
+.auth-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw; height: 100vh;
+  position: fixed; inset: 0; z-index: 1000;
+}
+
+.auth-box {
+  background: #deeafc;
+  border: 1px solid var(--msn-border);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  width: 360px;
+  padding: 20px 24px 18px;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--msn-border);
+}
+
+.butterfly-logo {
+  width: 36px; height: 36px;
+  background: var(--msn-bluebar);
+  border-radius: 50% 0 50% 0;
+  box-shadow: inset 0 0 8px rgba(255,255,255,.4);
+  flex-shrink: 0;
+}
+
+.msn-brand {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--msn-blue1);
+  letter-spacing: -.5px;
+}
+
+.auth-subtitle {
+  color: #446;
+  margin-bottom: 12px;
+  font-size: 11px;
+}
+
+.auth-panel { display: none; }
+.auth-panel.active { display: block; }
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+.form-row label { color: #334; font-weight: bold; font-size: 11px; }
+.form-row input {
+  border: 1px solid #99b;
+  border-radius: 2px;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  background: #fff;
+  outline: none;
+  transition: border-color .15s;
+}
+.form-row input:focus { border-color: var(--msn-blue2); }
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.auth-error {
+  color: #c00;
+  font-size: 11px;
+  margin-top: 8px;
+  min-height: 14px;
+}
+
+/* ── MSN Buttons ──────────────────────────────────── */
+.msn-btn {
+  background: var(--msn-btn);
+  border: 1px solid #7090c0;
+  border-radius: 3px;
+  padding: 4px 14px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  color: #112;
+  transition: background .1s;
+}
+.msn-btn:hover { background: var(--msn-btn-hover); }
+.msn-btn:active { background: var(--msn-btn-active); }
+.msn-btn.primary {
+  background: linear-gradient(180deg, #4a9bde 0%, #1e6ec4 100%);
+  border-color: #1050aa;
+  color: #fff;
+  font-weight: bold;
+}
+.msn-btn.primary:hover { background: linear-gradient(180deg, #5aaff0 0%, #2880d8 100%); }
+.msn-btn.small { padding: 3px 8px; }
+
+/* ── MSN Window ───────────────────────────────────── */
+.msn-window {
+  position: fixed;
+  background: #deeafc;
+  border: 1px solid var(--msn-border);
+  border-radius: 6px 6px 4px 4px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+/* Title bar */
+.msn-titlebar {
+  background: var(--msn-titlebar);
+  padding: 5px 8px 4px;
+  border-radius: 5px 5px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: move;
+  flex-shrink: 0;
+}
+.win-title {
+  color: #fff;
+  font-weight: bold;
+  font-size: 11px;
+  text-shadow: 0 1px 2px rgba(0,0,0,.5);
+}
+.win-controls { display: flex; gap: 2px; }
+.win-btn {
+  width: 18px; height: 18px;
+  border: 1px solid rgba(255,255,255,.4);
+  border-radius: 3px;
+  background: rgba(255,255,255,.2);
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.win-btn:hover { background: rgba(255,255,255,.4); }
+.win-btn.close:hover { background: #cc3030; }
+
+/* ── Buddy List Window ────────────────────────────── */
+.buddy-window {
+  top: 60px; left: 40px;
+  width: 260px;
+  min-height: 400px;
+  max-height: calc(100vh - 80px);
+  overflow: hidden;
+  z-index: 100;
+}
+
+/* My profile bar */
+.my-profile-bar {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 8px 6px;
+  background: linear-gradient(180deg, #c8daf8 0%, #b8ccf0 100%);
+  border-bottom: 1px solid var(--msn-border);
+  flex-shrink: 0;
+}
+
+.avatar-wrapper { position: relative; width: 44px; height: 44px; }
+.avatar-img {
+  width: 44px; height: 44px;
+  border: 2px solid rgba(255,255,255,.7);
+  border-radius: 4px;
+  object-fit: cover;
+  background: #fff;
+}
+.avatar-upload-btn {
+  position: absolute; bottom: -2px; right: -2px;
+  background: rgba(0,0,0,.5);
+  color: #fff; font-size: 8px;
+  width: 14px; height: 14px;
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.avatar-upload-btn:hover { background: var(--msn-blue2); }
+
+.my-info { min-width: 0; }
+.my-name {
+  font-weight: bold;
+  font-size: 12px;
+  color: #002266;
+  outline: none;
+  border-bottom: 1px solid transparent;
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.my-name:focus { border-bottom-color: var(--msn-blue2); }
+.my-status-msg {
+  font-size: 10px;
+  color: #446;
+  outline: none;
+  border-bottom: 1px solid transparent;
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.my-status-msg:focus { border-bottom-color: var(--msn-blue2); }
+
+.my-status-selector select {
+  border: 1px solid #7090c0;
+  border-radius: 2px;
+  background: #eef4ff;
+  font-family: inherit;
+  font-size: 10px;
+  padding: 2px 2px;
+  cursor: pointer;
+}
+
+/* ID bar */
+.id-bar {
+  padding: 4px 8px;
+  background: #c8d8f0;
+  border-bottom: 1px solid var(--msn-border);
+  font-size: 10px;
+  color: #334;
+  display: flex; align-items: center; gap: 4px;
+  flex-shrink: 0;
+}
+.id-bar strong { color: #002; letter-spacing: 1px; }
+.copy-id-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 11px; padding: 0 2px;
+  opacity: .6;
+}
+.copy-id-btn:hover { opacity: 1; }
+
+/* Add contact */
+.add-friend-bar {
+  display: flex; gap: 4px;
+  padding: 6px 8px;
+  background: #d8e8f8;
+  border-bottom: 1px solid var(--msn-border);
+  flex-shrink: 0;
+}
+.add-friend-bar input {
+  flex: 1;
+  border: 1px solid #99b;
+  border-radius: 2px;
+  padding: 3px 5px;
+  font-size: 11px;
+  font-family: inherit;
+}
+.add-friend-bar input:focus { border-color: var(--msn-blue2); outline: none; }
+
+/* Contacts area */
+.contacts-area {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 4px;
+}
+.contacts-area::-webkit-scrollbar { width: 8px; }
+.contacts-area::-webkit-scrollbar-track { background: #ccd8ee; }
+.contacts-area::-webkit-scrollbar-thumb { background: #90b0d8; border-radius: 4px; }
+
+.section-header {
+  padding: 3px 8px;
+  font-weight: bold;
+  font-size: 10px;
+  color: #fff;
+  cursor: pointer;
+  background: var(--msn-bluebar);
+}
+.pending-header { background: linear-gradient(180deg, #c06010 0%, #a04808 100%); }
+.offline-header { background: linear-gradient(180deg, #6888aa 0%, #507098 100%); }
+
+.contact-group { padding: 2px 0; }
+
+.contact-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background .1s;
+  border-bottom: 1px solid rgba(100,140,200,.2);
+}
+.contact-item:hover { background: #c8d8f0; }
+.contact-item.active { background: #b0c8e8; }
+
+.contact-avatar {
+  width: 32px; height: 32px;
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.6);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.contact-info { flex: 1; min-width: 0; }
+.contact-name {
+  font-weight: bold; font-size: 11px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: #112;
+}
+.contact-status-msg {
+  font-size: 10px; color: #556;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.status-dot.online  { background: var(--msn-online); box-shadow: 0 0 3px var(--msn-online); }
+.status-dot.away    { background: var(--msn-away); }
+.status-dot.busy    { background: var(--msn-busy); }
+.status-dot.offline { background: var(--msn-offline); }
+
+/* Pending requests */
+.requests-section { flex-shrink: 0; }
+.request-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(200,160,80,.3);
+  background: #fdf0e0;
+}
+.request-item .req-name { flex: 1; font-size: 11px; color: #553300; }
+.req-accept, .req-reject {
+  border: 1px solid; border-radius: 2px;
+  font-size: 10px; padding: 1px 5px; cursor: pointer; font-family: inherit;
+}
+.req-accept { background: #d4f0d4; border-color: #80c080; color: #244; }
+.req-reject { background: #ffd4d4; border-color: #c08080; color: #422; }
+
+/* ── Chat Window ──────────────────────────────────── */
+.chat-window {
+  width: 420px;
+  min-height: 380px;
+  resize: both;
+  overflow: hidden;
+  z-index: 200;
+}
+
+.chat-titlebar { cursor: move; }
+
+.chat-header-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, #c0d4f0 0%, #a8c0e4 100%);
+  border-bottom: 1px solid var(--msn-border);
+  flex-shrink: 0;
+}
+.chat-header-bar .avatar-img { width: 36px; height: 36px; }
+.chat-partner-display { font-weight: bold; font-size: 12px; color: #002; }
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+  background: #fff;
+  display: flex; flex-direction: column; gap: 6px;
+  min-height: 180px;
+  max-height: 300px;
+}
+.chat-messages::-webkit-scrollbar { width: 7px; }
+.chat-messages::-webkit-scrollbar-thumb { background: #90b0d8; border-radius: 3px; }
+
+.msg-row {
+  display: flex; flex-direction: column;
+  max-width: 80%;
+}
+.msg-row.mine { align-self: flex-end; align-items: flex-end; }
+.msg-row.theirs { align-self: flex-start; align-items: flex-start; }
+.msg-sender {
+  font-size: 10px; font-weight: bold; color: #446;
+  margin-bottom: 2px;
+}
+.msg-bubble {
+  padding: 5px 9px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  word-break: break-word;
+  max-width: 100%;
+}
+.msg-row.mine .msg-bubble {
+  background: #d0e8ff;
+  border: 1px solid #90b8e8;
+  color: #001133;
+}
+.msg-row.theirs .msg-bubble {
+  background: #f0f4f8;
+  border: 1px solid #c0ccd8;
+  color: #112;
+}
+.msg-time { font-size: 9px; color: #889; margin-top: 2px; }
+
+/* Nudge / Wink special msg */
+.msg-bubble.nudge { 
+  background: #fff8d0; border-color: #e0c040;
+  font-style: italic; color: #664400;
+}
+.msg-bubble.wink {
+  background: #ffe0f0; border-color: #e080a0;
+  font-style: italic; color: #660044;
+}
+
+.typing-indicator {
+  padding: 4px 10px;
+  font-size: 10px; color: #668;
+  background: #f4f8ff;
+  border-top: 1px solid #d0ddf0;
+  flex-shrink: 0;
+}
+
+.chat-toolbar {
+  display: flex; gap: 4px;
+  padding: 4px 8px;
+  background: #d4e4f4;
+  border-top: 1px solid var(--msn-border);
+  flex-shrink: 0;
+}
+.chat-tool-btn {
+  background: none; border: 1px solid transparent;
+  border-radius: 2px; padding: 2px 6px; cursor: pointer;
+  font-size: 14px; transition: border-color .1s;
+}
+.chat-tool-btn:hover { border-color: #90b0d8; background: #e0eeff; }
+
+.chat-input-row {
+  display: flex; gap: 6px; align-items: flex-end;
+  padding: 6px 8px;
+  background: #d4e4f4;
+  border-top: 1px solid var(--msn-border);
+  flex-shrink: 0;
+}
+.chat-input {
+  flex: 1;
+  border: 1px solid #90b0cc;
+  border-radius: 2px;
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  resize: none;
+  background: #fff;
+  outline: none;
+}
+.chat-input:focus { border-color: var(--msn-blue2); }
+
+/* ── Notification toast ───────────────────────────── */
+.notification-toast {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  background: linear-gradient(180deg, #1b5fcc 0%, #0f4aaa 100%);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 6px;
+  padding: 10px 16px;
+  box-shadow: var(--shadow);
+  z-index: 9999;
+  font-size: 12px;
+  max-width: 240px;
+  animation: slideUp .2s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── App layout ───────────────────────────────────── */
+.app { position: fixed; inset: 0; }
+
+/* ── Divider / scrollbar for buddy ───────────────── */
+.buddy-window .contacts-area {
+  box-shadow: inset 0 2px 4px rgba(0,0,80,.08);
+}

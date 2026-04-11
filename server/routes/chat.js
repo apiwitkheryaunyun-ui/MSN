@@ -5,6 +5,12 @@ const auth = require('../middleware');
 
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const MESSAGE_TYPES = new Set(['text', 'nudge', 'wink', 'file']);
+const IS_GROUP_TRUE_SQL = db.isPG
+  ? "COALESCE(c.is_group::text, '0') IN ('1','t','true')"
+  : 'c.is_group = 1';
+const IS_GROUP_FALSE_SQL = db.isPG
+  ? "COALESCE(c.is_group::text, '0') IN ('0','f','false')"
+  : 'c.is_group = 0';
 
 async function getOrCreateConv(userId, friendId) {
   const existing = await db.get(`
@@ -12,7 +18,7 @@ async function getOrCreateConv(userId, friendId) {
     FROM conversations c
     JOIN conversation_members m1 ON m1.conversation_id = c.id AND m1.user_id = ?
     JOIN conversation_members m2 ON m2.conversation_id = c.id AND m2.user_id = ?
-    WHERE c.is_group = 0
+    WHERE ${IS_GROUP_FALSE_SQL}
       AND (SELECT COUNT(*) FROM conversation_members WHERE conversation_id = c.id) = 2
     LIMIT 1
   `, [userId, friendId]);
@@ -50,7 +56,7 @@ async function getGroup(conversationId) {
             (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY sent_at DESC, id DESC LIMIT 1) AS last_msg,
             (SELECT sent_at FROM messages WHERE conversation_id = c.id ORDER BY sent_at DESC, id DESC LIMIT 1) AS last_time
      FROM conversations c
-     WHERE c.id = ? AND c.is_group = 1`,
+     WHERE c.id = ? AND ${IS_GROUP_TRUE_SQL}`,
     [conversationId]
   );
 }
@@ -157,7 +163,7 @@ router.get('/conversations', auth, async (req, res) => {
     JOIN conversation_members cm ON cm.conversation_id = c.id AND cm.user_id = ?
     JOIN conversation_members cm2 ON cm2.conversation_id = c.id AND cm2.user_id != ?
     JOIN users u ON u.id = cm2.user_id
-    WHERE c.is_group = 0
+    WHERE ${IS_GROUP_FALSE_SQL}
     ORDER BY COALESCE(last_time, 0) DESC, c.id DESC
   `, [req.user.userId, req.user.userId, req.user.userId]);
 
@@ -172,7 +178,7 @@ router.get('/groups', auth, async (req, res) => {
       (SELECT sent_at FROM messages WHERE conversation_id = c.id ORDER BY sent_at DESC, id DESC LIMIT 1) AS last_time
     FROM conversations c
     JOIN conversation_members cm ON cm.conversation_id = c.id AND cm.user_id = ?
-    WHERE c.is_group = 1
+    WHERE ${IS_GROUP_TRUE_SQL}
     ORDER BY COALESCE(last_time, 0) DESC, c.id DESC
   `, [req.user.userId]);
 

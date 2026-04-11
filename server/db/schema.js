@@ -128,7 +128,6 @@ if (isPG) {
     CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, sent_at);
     CREATE INDEX IF NOT EXISTS idx_friends_user  ON friends(user_id, status);
     CREATE INDEX IF NOT EXISTS idx_users_msn_id  ON users(msn_id);
-    CREATE INDEX IF NOT EXISTS idx_conversations_group ON conversations(is_group);
   `;
 
   adapter = {

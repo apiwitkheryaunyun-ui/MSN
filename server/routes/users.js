@@ -53,8 +53,9 @@ router.patch('/me', auth, async (req, res) => {
   }
   if (avatar_url !== undefined) {
     // Only allow data URLs (base64) or empty string — no external URLs
-    if (avatar_url === '' || /^data:image\/(png|jpeg|gif|webp);base64,/.test(avatar_url)) {
-      updates.push('avatar_url = ?'); vals.push(String(avatar_url).slice(0, 450000));
+    const avatarValue = String(avatar_url || '');
+    if (avatarValue === '' || /^data:image\/(png|jpe?g|gif|webp);base64,/i.test(avatarValue)) {
+      updates.push('avatar_url = ?'); vals.push(avatarValue.slice(0, 2500000));
     }
   }
 

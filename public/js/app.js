@@ -21,7 +21,7 @@ let activeCalls = new Map();
 const isEmbeddedMode = window.self !== window.top;
 
 const TYPING_DEBOUNCE = 1500;
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_AVATAR_EXPORT_BYTES = 320 * 1024;
 const AVATAR_CANVAS_SIZE = 180;
 const OPEN_CONVERSATIONS_KEY = 'msn-open-conversations';
@@ -460,12 +460,13 @@ function renderGroups() {
   const list = $('groups-list');
   list.innerHTML = '';
   groups.forEach((group) => {
+    const groupTitle = (group.title || '').trim() || `Group #${group.id}`;
     const item = document.createElement('div');
     item.className = 'contact-item group-item';
     item.innerHTML = `
       <span class="group-badge">👥</span>
       <div class="contact-info">
-        <div class="contact-name">${escHtml(group.title)}</div>
+        <div class="contact-name">${escHtml(groupTitle)}</div>
         <div class="contact-status-msg">${group.member_count} members${group.last_msg ? ` · ${escHtml(group.last_msg)}` : ''}</div>
       </div>
     `;
@@ -781,7 +782,7 @@ async function sendFileMessage(meta, win, fileInput, inputEl) {
   const file = fileInput.files[0];
   if (!file) return;
   if (file.size > MAX_FILE_BYTES) {
-    toast('ไฟล์ต้องไม่เกิน 5MB');
+    toast('ไฟล์ต้องไม่เกิน 10MB');
     fileInput.value = '';
     return;
   }

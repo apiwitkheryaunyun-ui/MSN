@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db/schema');
 const auth = require('../middleware');
 
-const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const MESSAGE_TYPES = new Set(['text', 'nudge', 'wink', 'file']);
 const IS_GROUP_TRUE_SQL = db.isPG
   ? "COALESCE(c.is_group::text, '0') IN ('1','t','true')"
@@ -11,6 +11,8 @@ const IS_GROUP_TRUE_SQL = db.isPG
 const IS_GROUP_FALSE_SQL = db.isPG
   ? "COALESCE(c.is_group::text, '0') IN ('0','f','false')"
   : 'c.is_group = 0';
+const DIRECT_GROUP_FLAG = db.isPG ? false : 0;
+const CHAT_GROUP_FLAG = db.isPG ? true : 1;
 
 async function getOrCreateConv(userId, friendId) {
   const existing = await db.get(`
@@ -27,7 +29,7 @@ async function getOrCreateConv(userId, friendId) {
     return existing.id;
   }
 
-  const conv = await db.run('INSERT INTO conversations (title, owner_id, is_group) VALUES (?,?,0)', ['', userId]);
+  const conv = await db.run('INSERT INTO conversations (title, owner_id, is_group) VALUES (?,?,?)', ['', userId, DIRECT_GROUP_FLAG]);
   await db.run(
     'INSERT INTO conversation_members (conversation_id, user_id) VALUES (?,?),(?,?)',
     [conv.lastID, userId, conv.lastID, friendId]
@@ -95,7 +97,7 @@ function normalizeAttachment(attachment) {
     throw new Error('ไฟล์แนบไม่ถูกต้อง');
   }
   if (!Number.isFinite(attachmentSize) || attachmentSize <= 0 || attachmentSize > MAX_ATTACHMENT_BYTES) {
-    throw new Error('ไฟล์ต้องไม่เกิน 5MB');
+    throw new Error('ไฟล์ต้องไม่เกิน 10MB');
   }
 
   return {
@@ -172,7 +174,9 @@ router.get('/conversations', auth, async (req, res) => {
 
 router.get('/groups', auth, async (req, res) => {
   const groups = await db.all(`
-    SELECT c.id, c.title, c.owner_id,
+    SELECT c.id,
+      COALESCE(NULLIF(c.title, ''), ('Group #' || c.id)) AS title,
+      c.owner_id,
       (SELECT COUNT(*) FROM conversation_members cm WHERE cm.conversation_id = c.id) AS member_count,
       (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY sent_at DESC, id DESC LIMIT 1) AS last_msg,
       (SELECT sent_at FROM messages WHERE conversation_id = c.id ORDER BY sent_at DESC, id DESC LIMIT 1) AS last_time
@@ -210,8 +214,8 @@ router.post('/groups', auth, async (req, res) => {
   }
 
   const conversation = await db.run(
-    'INSERT INTO conversations (title, owner_id, is_group) VALUES (?,?,1)',
-    [title, req.user.userId]
+    'INSERT INTO conversations (title, owner_id, is_group) VALUES (?,?,?)',
+    [title, req.user.userId, CHAT_GROUP_FLAG]
   );
 
   const memberIds = [req.user.userId, ...requestedMemberIds];

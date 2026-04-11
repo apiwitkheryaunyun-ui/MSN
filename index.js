@@ -31,10 +31,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'change_this_in_production';
 
 const io = new Server(server, {
   cors: { origin: false },
-  cookie: true
+  cookie: true,
+  maxHttpBufferSize: 15 * 1024 * 1024,
 });
 
-app.use(express.json({ limit: '12mb' }));
+app.use(express.json({ limit: '25mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 

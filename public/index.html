@@ -108,12 +108,50 @@
       <span>My MSN ID: </span>
       <strong id="my-msn-id">----------</strong>
       <button class="copy-id-btn" id="copy-id-btn" title="Copy ID">📋</button>
+      <button class="copy-id-btn" id="settings-toggle-btn" title="Settings">⚙</button>
     </div>
 
     <!-- Add friend bar -->
     <div class="add-friend-bar">
       <input id="add-contact-input" type="text" maxlength="10" placeholder="Enter 10-digit MSN ID to add..." />
       <button id="add-contact-btn" class="msn-btn small">Add</button>
+    </div>
+
+    <div id="settings-panel" class="settings-panel hidden">
+      <div class="settings-grid">
+        <label>
+          <span>Theme</span>
+          <select id="theme-select">
+            <option value="classic">Classic Blue</option>
+            <option value="olive">Olive XP</option>
+            <option value="silver">Silver Frost</option>
+          </select>
+        </label>
+        <label>
+          <span>Privacy</span>
+          <select id="privacy-select">
+            <option value="everyone">Everyone</option>
+            <option value="contacts-only">Contacts Only</option>
+          </select>
+        </label>
+      </div>
+      <label class="settings-check"><input id="sounds-toggle" type="checkbox" /> Enable notification sounds</label>
+      <label class="settings-check"><input id="friend-requests-toggle" type="checkbox" /> Allow friend requests</label>
+      <label class="settings-check"><input id="file-transfer-toggle" type="checkbox" /> Allow file transfer</label>
+    </div>
+
+    <div class="group-bar">
+      <button id="toggle-group-composer" class="msn-btn small">New Group</button>
+      <span class="group-bar-text">Create shared chats with your contacts</span>
+    </div>
+
+    <div id="group-composer" class="group-composer hidden">
+      <input id="group-title-input" type="text" maxlength="50" placeholder="Group name..." />
+      <div id="group-member-list" class="group-member-list"></div>
+      <div class="group-actions">
+        <button id="create-group-btn" class="msn-btn primary small">Create Group</button>
+        <button id="cancel-group-btn" class="msn-btn small">Cancel</button>
+      </div>
     </div>
 
     <!-- Pending friend requests -->
@@ -124,6 +162,8 @@
 
     <!-- Contacts list -->
     <div class="contacts-area">
+      <div class="section-header groups-header">Groups</div>
+      <div id="groups-list" class="contact-group"></div>
       <div class="section-header online-header">Online</div>
       <div id="online-list" class="contact-group"></div>
       <div class="section-header offline-header">Offline</div>
@@ -156,10 +196,12 @@
       </div>
     </div>
     <div class="chat-messages"></div>
-    <div class="typing-indicator hidden"><em id="typing-text"></em></div>
+    <div class="typing-indicator hidden"><em class="typing-text"></em></div>
     <div class="chat-toolbar">
+      <button class="chat-tool-btn attach-btn" title="Send file">📎</button>
       <button class="chat-tool-btn nudge-btn" title="Nudge">💥</button>
       <button class="chat-tool-btn wink-btn" title="Wink">😜</button>
+      <input type="file" class="hidden file-input" />
     </div>
     <div class="chat-input-row">
       <textarea class="chat-input" placeholder="Type a message..." rows="3"></textarea>

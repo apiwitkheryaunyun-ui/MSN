@@ -10,7 +10,16 @@ const db = require('./server/db/schema');
 const authRouter = require('./server/routes/auth');
 const usersRouter = require('./server/routes/users');
 const friendsRouter = require('./server/routes/friends');
+const settingsRouter = require('./server/routes/settings');
 const { router: chatRouter, getOrCreateConv } = require('./server/routes/chat');
+const {
+  getConversationById,
+  ensureAcceptedFriendship,
+  ensureConversationMember,
+  getConversationRecipients,
+  createMessage,
+} = require('./server/services/chatService');
+const { isValidMessageType, sanitizeText, validateAttachment } = require('./server/validators');
 
 const app = express();
 const server = http.createServer(app);
@@ -22,15 +31,16 @@ const io = new Server(server, {
   cookie: true
 });
 
-// ÄÄ Middleware ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+// ï¿½ï¿½ Middleware ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ÄÄ API Routes ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+// ï¿½ï¿½ API Routes ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/friends', friendsRouter);
+app.use('/api/settings', settingsRouter);
 app.use('/api/chat', chatRouter);
 
 // SPA fallback
@@ -39,7 +49,7 @@ app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ÄÄ Socket.io ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+// ï¿½ï¿½ Socket.io ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 const onlineUsers = new Map();
 
 io.use((socket, next) => {
@@ -90,50 +100,88 @@ io.on('connection', async (socket) => {
     broadcastStatusToFriends(uid, status);
   });
 
-  socket.on('message:send', async ({ to_user_id, content, msg_type = 'text' }, ack) => {
-    if (!content || !String(content).trim()) return;
-    if (!['text', 'nudge', 'wink'].includes(msg_type)) return;
+  socket.on('message:send', async (payload, ack) => {
+    try {
+      const msgType = payload?.msg_type || 'text';
+      if (!isValidMessageType(msgType)) return;
 
-    const friendship = await db.get(
-      "SELECT id FROM friends WHERE status='accepted' AND ((user_id=? AND friend_id=?) OR (user_id=? AND friend_id=?))",
-      [uid, to_user_id, to_user_id, uid]
-    );
-    if (!friendship) return;
+      const attachmentCheck = validateAttachment(payload?.attachment);
+      if (!attachmentCheck.ok) {
+        if (typeof ack === 'function') ack({ ok: false, error: attachmentCheck.error });
+        return;
+      }
 
-    const convId = await getOrCreateConv(uid, to_user_id);
-    const safe = String(content).slice(0, 4000);
+      let convId;
+      let recipients = [];
+      let conversationKind = 'direct';
+      let conversationTitle = '';
 
-    const msg = await db.run(
-      'INSERT INTO messages (conversation_id, sender_id, content, msg_type) VALUES (?,?,?,?)',
-      [convId, uid, safe, msg_type]
-    );
+      if (payload?.conversation_id) {
+        const conversationId = parseInt(payload.conversation_id, 10);
+        const conv = await getConversationById(conversationId);
+        if (!conv || conv.kind !== 'group') {
+          if (typeof ack === 'function') ack({ ok: false, error: 'à¹„à¸¡à¹ˆà¸žà¸šà¸«à¹‰à¸­à¸‡à¹à¸Šà¸•à¸à¸¥à¸¸à¹ˆà¸¡' });
+          return;
+        }
+        const member = await ensureConversationMember(conversationId, uid);
+        if (!member) {
+          if (typeof ack === 'function') ack({ ok: false, error: 'à¹„à¸¡à¹ˆà¸¡à¸µà¸ªà¸´à¸—à¸˜à¸´à¹Œà¹ƒà¸™à¸«à¹‰à¸­à¸‡à¸™à¸µà¹‰' });
+          return;
+        }
 
-    const sender = await db.get('SELECT display_name, avatar_url FROM users WHERE id=?', [uid]);
-    const payload = {
-      id: msg.lastID,
-      conversation_id: convId,
-      sender_id: uid,
-      sender_name: sender.display_name,
-      sender_avatar: sender.avatar_url,
-      content: safe,
-      msg_type,
-      sent_at: Math.floor(Date.now() / 1000),
-      is_read: 0
-    };
+        convId = conversationId;
+        conversationKind = 'group';
+        conversationTitle = conv.title;
+        recipients = (await getConversationRecipients(convId, uid)).map(row => row.user_id);
+      } else {
+        const targetUserId = parseInt(payload?.to_user_id, 10);
+        const friendship = await ensureAcceptedFriendship(uid, targetUserId);
+        if (!friendship) {
+          if (typeof ack === 'function') ack({ ok: false, error: 'à¸•à¹‰à¸­à¸‡à¹€à¸›à¹‡à¸™à¹€à¸žà¸·à¹ˆà¸­à¸™à¸à¸±à¸™à¸à¹ˆà¸­à¸™à¸ˆà¸¶à¸‡à¸ªà¹ˆà¸‡à¸‚à¹‰à¸­à¸„à¸§à¸²à¸¡à¹„à¸”à¹‰' });
+          return;
+        }
+        convId = await getOrCreateConv(uid, targetUserId);
+        recipients = [targetUserId];
+      }
 
-    const recipientSockets = onlineUsers.get(to_user_id);
-    if (recipientSockets) {
-      recipientSockets.forEach(sid => io.to(sid).emit('message:new', payload));
-    }
-
-    const senderSockets = onlineUsers.get(uid);
-    if (senderSockets) {
-      senderSockets.forEach(sid => {
-        if (sid !== socket.id) io.to(sid).emit('message:new', payload);
+      const inserted = await createMessage({
+        conversationId: convId,
+        senderId: uid,
+        content: sanitizeText(payload?.content, msgType === 'file' ? 280 : 4000),
+        msgType,
+        attachment: attachmentCheck.attachment,
       });
-    }
 
-    if (typeof ack === 'function') ack({ ok: true, message: payload });
+      const sender = await db.get('SELECT display_name, avatar_url, username FROM users WHERE id=?', [uid]);
+      const messagePayload = {
+        ...inserted,
+        sender_name: sender.display_name,
+        sender_avatar: sender.avatar_url,
+        conversation_id: convId,
+        conversation_kind: conversationKind,
+        conversation_title: conversationTitle,
+        peer_user_id: payload?.to_user_id || null,
+      };
+
+      recipients.forEach((recipientId) => {
+        const recipientSockets = onlineUsers.get(recipientId);
+        if (recipientSockets) {
+          recipientSockets.forEach((sid) => io.to(sid).emit('message:new', messagePayload));
+        }
+      });
+
+      const senderSockets = onlineUsers.get(uid);
+      if (senderSockets) {
+        senderSockets.forEach((sid) => {
+          if (sid !== socket.id) io.to(sid).emit('message:new', messagePayload);
+        });
+      }
+
+      if (typeof ack === 'function') ack({ ok: true, message: messagePayload });
+    } catch (error) {
+      console.error('socket message error', error);
+      if (typeof ack === 'function') ack({ ok: false, error: 'à¸ªà¹ˆà¸‡à¸‚à¹‰à¸­à¸„à¸§à¸²à¸¡à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ' });
+    }
   });
 
   socket.on('typing:start', async ({ to_user_id }) => {
@@ -174,7 +222,7 @@ async function broadcastStatusToFriends(userId, status) {
   });
 }
 
-// ÄÄ Start ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+// ï¿½ï¿½ Start ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 const PORT = process.env.PORT || 3000;
 
 async function main() {

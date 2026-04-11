@@ -1,30 +1,36 @@
 /* ══════════════════════════════════════════════════════
    MSN Messenger — Client-side JavaScript
-   All API calls use relative paths (no external URLs)
 ══════════════════════════════════════════════════════ */
 'use strict';
 
-// ── State ────────────────────────────────────────────
-let me = null;           // current user object
-let socket = null;       // Socket.io connection
-let friends = [];        // friend list cache
-let chatWindows = {};    // userId → DOM element
+let me = null;
+let socket = null;
+let friends = [];
+let groups = [];
+let settings = {
+  theme: 'classic',
+  sounds_enabled: 1,
+  allow_friend_requests: 1,
+  allow_file_transfer: 1,
+  privacy_mode: 'everyone',
+};
+let chatWindows = {};
+let typingTimers = {};
 
-const TYPING_DEBOUNCE = 1500; // ms
-let typingTimers = {};   // userId → timeout id
+const TYPING_DEBOUNCE = 1500;
+const $ = (id) => document.getElementById(id);
+const authScreen = $('auth-screen');
+const app = $('app');
+const loginPanel = $('login-panel');
+const registerPanel = $('register-panel');
 
-// ── DOM refs ─────────────────────────────────────────
-const authScreen      = document.getElementById('auth-screen');
-const app             = document.getElementById('app');
-const loginPanel      = document.getElementById('login-panel');
-const registerPanel   = document.getElementById('register-panel');
+const directKey = (userId) => `direct:${userId}`;
+const groupKey = (conversationId) => `group:${conversationId}`;
 
-// ── Utility ──────────────────────────────────────────
-const $ = id => document.getElementById(id);
-const fmtTime = ts => {
+function fmtTime(ts) {
   const d = new Date(ts * 1000);
   return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-};
+}
 
 function toast(msg, duration = 3500) {
   const el = $('notification-toast');
@@ -34,50 +40,118 @@ function toast(msg, duration = 3500) {
   toast._t = setTimeout(() => el.classList.add('hidden'), duration);
 }
 
-function statusClass(s) {
-  if (!s || s === 'appear offline') return 'offline';
-  return s.replace(/\s+/g, '-').toLowerCase();
+function statusClass(status) {
+  if (!status || status === 'appear offline') return 'offline';
+  return status.replace(/\s+/g, '-').toLowerCase();
+}
+
+function escHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 }
 
 async function api(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(path, opts);
-  return r.json();
+  const res = await fetch(path, opts);
+  return res.json();
 }
 
-// ── Auth ─────────────────────────────────────────────
+function applyTheme() {
+  document.body.dataset.theme = settings.theme || 'classic';
+}
+
+function setProfileFields() {
+  $('my-display-name').textContent = me.display_name || me.username;
+  $('my-status-msg').textContent = me.status_msg || '';
+  $('my-msn-id').textContent = me.msn_id;
+  $('status-select').value = me.status || 'online';
+  $('my-avatar').src = me.avatar_url || 'img/default-avatar.png';
+}
+
+function renderSettings() {
+  $('theme-select').value = settings.theme || 'classic';
+  $('privacy-select').value = settings.privacy_mode || 'everyone';
+  $('sounds-toggle').checked = !!settings.sounds_enabled;
+  $('friend-requests-toggle').checked = !!settings.allow_friend_requests;
+  $('file-transfer-toggle').checked = !!settings.allow_file_transfer;
+  applyTheme();
+}
+
+async function loadSettings() {
+  const data = await api('GET', '/api/settings/me');
+  if (data.ok) {
+    settings = { ...settings, ...data.settings };
+    renderSettings();
+  }
+}
+
+async function saveSettings(patch) {
+  const data = await api('PATCH', '/api/settings/me', patch);
+  if (!data.ok) {
+    toast(data.error || 'อัปเดตการตั้งค่าไม่สำเร็จ');
+    return;
+  }
+  settings = { ...settings, ...data.settings };
+  renderSettings();
+}
+
+async function init() {
+  const data = await api('GET', '/api/auth/me');
+  if (data.ok) {
+    me = data.user;
+    startApp();
+  }
+}
+
+async function startApp() {
+  authScreen.classList.add('hidden');
+  app.classList.remove('hidden');
+  setProfileFields();
+  await Promise.all([loadSettings(), loadFriends(), loadGroups(), loadPendingRequests()]);
+  connectSocket();
+  setInterval(loadPendingRequests, 30000);
+  setInterval(loadGroups, 45000);
+}
+
 $('goto-register').onclick = () => {
   loginPanel.classList.remove('active');
   registerPanel.classList.add('active');
 };
+
 $('goto-login').onclick = () => {
   registerPanel.classList.remove('active');
   loginPanel.classList.add('active');
 };
 
 $('login-btn').onclick = async () => {
-  const email    = $('login-email').value.trim();
-  const password = $('login-password').value;
-  $('login-error').textContent = '';
-  const data = await api('POST', '/api/auth/login', { email, password });
-  if (!data.ok) { $('login-error').textContent = data.error; return; }
+  const data = await api('POST', '/api/auth/login', {
+    email: $('login-email').value.trim(),
+    password: $('login-password').value,
+  });
+  $('login-error').textContent = data.ok ? '' : data.error;
+  if (!data.ok) return;
   me = data.user;
   startApp();
 };
 
-$('login-password').addEventListener('keydown', e => {
-  if (e.key === 'Enter') $('login-btn').click();
+$('login-password').addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') $('login-btn').click();
 });
 
 $('register-btn').onclick = async () => {
-  const username     = $('reg-username').value.trim();
-  const display_name = $('reg-display').value.trim();
-  const email        = $('reg-email').value.trim();
-  const password     = $('reg-password').value;
-  $('register-error').textContent = '';
-  const data = await api('POST', '/api/auth/register', { username, display_name, email, password });
-  if (!data.ok) { $('register-error').textContent = data.error; return; }
+  const data = await api('POST', '/api/auth/register', {
+    username: $('reg-username').value.trim(),
+    display_name: $('reg-display').value.trim(),
+    email: $('reg-email').value.trim(),
+    password: $('reg-password').value,
+  });
+  $('register-error').textContent = data.ok ? '' : data.error;
+  if (!data.ok) return;
   me = data.user;
   startApp();
 };
@@ -87,40 +161,19 @@ $('app-logout').onclick = async () => {
   location.reload();
 };
 
-// ── Startup ──────────────────────────────────────────
-async function init() {
-  const data = await api('GET', '/api/auth/me');
-  if (data.ok) { me = data.user; startApp(); }
-}
-
-async function startApp() {
-  authScreen.classList.add('hidden');
-  app.classList.remove('hidden');
-  renderMyProfile();
-  await loadFriends();
-  await loadPendingRequests();
-  connectSocket();
-  setInterval(loadPendingRequests, 30000);
-}
-
-function renderMyProfile() {
-  $('my-display-name').textContent = me.display_name || me.username;
-  $('my-status-msg').textContent   = me.status_msg || '';
-  $('my-msn-id').textContent       = me.msn_id;
-  if (me.avatar_url) $('my-avatar').src = me.avatar_url;
-  $('status-select').value = me.status || 'online';
-}
-
-// ── My profile edits ─────────────────────────────────
 let profileSaveTimer;
 function scheduleProfileSave() {
   clearTimeout(profileSaveTimer);
   profileSaveTimer = setTimeout(async () => {
-    const display_name = $('my-display-name').textContent.trim().slice(0, 50);
-    const status_msg   = $('my-status-msg').textContent.trim().slice(0, 140);
-    await api('PATCH', '/api/users/me', { display_name, status_msg });
-    if (socket) socket.emit('status:set', { status: $('status-select').value });
-  }, 1200);
+    const data = await api('PATCH', '/api/users/me', {
+      display_name: $('my-display-name').textContent.trim().slice(0, 50),
+      status_msg: $('my-status-msg').textContent.trim().slice(0, 140),
+    });
+    if (data.ok) {
+      me = { ...me, ...data.user };
+      setProfileFields();
+    }
+  }, 1000);
 }
 
 $('my-display-name').addEventListener('input', scheduleProfileSave);
@@ -128,106 +181,111 @@ $('my-status-msg').addEventListener('input', scheduleProfileSave);
 
 $('status-select').onchange = async () => {
   const status = $('status-select').value;
-  await api('PATCH', '/api/users/me', { status });
-  if (socket) socket.emit('status:set', { status });
+  const data = await api('PATCH', '/api/users/me', { status });
+  if (data.ok) {
+    me = { ...me, ...data.user };
+    if (socket) socket.emit('status:set', { status });
+  }
 };
 
-// Avatar upload (convert to base64 data URL stored on server)
-$('avatar-input').onchange = async (e) => {
-  const file = e.target.files[0];
+$('avatar-input').onchange = async (event) => {
+  const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { toast('รูปใหญ่เกิน 2MB ครับ'); return; }
+  if (file.size > 2 * 1024 * 1024) {
+    toast('รูปใหญ่เกิน 2MB ครับ');
+    return;
+  }
   const reader = new FileReader();
   reader.onload = async () => {
     const avatar_url = reader.result;
-    $('my-avatar').src = avatar_url;
-    await api('PATCH', '/api/users/me', { avatar_url });
-    me.avatar_url = avatar_url;
+    const data = await api('PATCH', '/api/users/me', { avatar_url });
+    if (data.ok) {
+      me = { ...me, ...data.user };
+      setProfileFields();
+    }
   };
   reader.readAsDataURL(file);
 };
 
 $('copy-id-btn').onclick = () => {
-  navigator.clipboard.writeText(me.msn_id).then(() => toast('คัดลอก MSN ID แล้ว!'));
+  navigator.clipboard.writeText(me.msn_id).then(() => toast('คัดลอก MSN ID แล้ว'));
 };
 
-// ── Friends ──────────────────────────────────────────
+$('settings-toggle-btn').onclick = () => {
+  $('settings-panel').classList.toggle('hidden');
+};
+
+$('theme-select').onchange = () => saveSettings({ theme: $('theme-select').value });
+$('privacy-select').onchange = () => saveSettings({ privacy_mode: $('privacy-select').value });
+$('sounds-toggle').onchange = () => saveSettings({ sounds_enabled: $('sounds-toggle').checked });
+$('friend-requests-toggle').onchange = () => saveSettings({ allow_friend_requests: $('friend-requests-toggle').checked });
+$('file-transfer-toggle').onchange = () => saveSettings({ allow_file_transfer: $('file-transfer-toggle').checked });
+
 async function loadFriends() {
   const data = await api('GET', '/api/friends');
   if (!data.ok) return;
   friends = data.friends;
   renderFriends();
+  renderGroupComposerMembers();
 }
 
 function renderFriends() {
-  const onlineEl  = $('online-list');
+  const onlineEl = $('online-list');
   const offlineEl = $('offline-list');
-  onlineEl.innerHTML  = '';
+  onlineEl.innerHTML = '';
   offlineEl.innerHTML = '';
 
-  friends.forEach(f => {
-    const el = createContactItem(f);
-    if (f.status === 'online' || f.status === 'away' || f.status === 'busy' || f.status === 'be right back') {
-      onlineEl.appendChild(el);
+  friends.forEach((friend) => {
+    const item = document.createElement('div');
+    item.className = 'contact-item';
+    item.innerHTML = `
+      <span class="status-dot ${statusClass(friend.status)}"></span>
+      <img class="contact-avatar" src="${friend.avatar_url || 'img/default-avatar.png'}" alt="" />
+      <div class="contact-info">
+        <div class="contact-name">${escHtml(friend.display_name || friend.username)}</div>
+        <div class="contact-status-msg">${escHtml(friend.status_msg || friend.msn_id)}</div>
+      </div>
+    `;
+    item.onclick = () => openDirectChat(friend);
+    if (['online', 'away', 'busy', 'be right back'].includes(friend.status)) {
+      onlineEl.appendChild(item);
     } else {
-      offlineEl.appendChild(el);
+      offlineEl.appendChild(item);
     }
   });
 }
 
-function createContactItem(f) {
-  const div = document.createElement('div');
-  div.className = 'contact-item';
-  div.dataset.userId = f.id;
-
-  const dot = document.createElement('span');
-  dot.className = `status-dot ${statusClass(f.status)}`;
-
-  const avatar = document.createElement('img');
-  avatar.className = 'contact-avatar';
-  avatar.src = f.avatar_url || 'img/default-avatar.png';
-  avatar.alt = '';
-
-  const info = document.createElement('div');
-  info.className = 'contact-info';
-  info.innerHTML = `
-    <div class="contact-name">${escHtml(f.display_name || f.username)}</div>
-    <div class="contact-status-msg">${escHtml(f.status_msg || f.msn_id)}</div>
-  `;
-
-  div.appendChild(dot);
-  div.appendChild(avatar);
-  div.appendChild(info);
-  div.addEventListener('click', () => openChat(f));
-  return div;
-}
-
-// Add contact
-$('add-contact-btn').onclick = addContact;
-$('add-contact-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') addContact();
-});
-
 async function addContact() {
-  const msn_id = $('add-contact-input').value.trim();
-  if (!/^\d{10}$/.test(msn_id)) { toast('MSN ID ต้องเป็นตัวเลข 10 หลัก'); return; }
-  const data = await api('POST', '/api/friends/add', { msn_id });
-  if (!data.ok) { toast(data.error); return; }
-  toast('ส่งคำขอเป็นเพื่อนแล้ว! 🎉');
+  const msnId = $('add-contact-input').value.trim();
+  if (!/^\d{10}$/.test(msnId)) {
+    toast('MSN ID ต้องเป็นตัวเลข 10 หลัก');
+    return;
+  }
+
+  const data = await api('POST', '/api/friends/add', { msn_id: msnId });
+  if (!data.ok) {
+    toast(data.error);
+    return;
+  }
+
+  toast('ส่งคำขอเป็นเพื่อนแล้ว');
   $('add-contact-input').value = '';
   if (socket) {
-    // Notify target if online
-    const userRes = await api('GET', `/api/users/search?msn_id=${msn_id}`);
+    const userRes = await api('GET', `/api/users/search?msn_id=${msnId}`);
     if (userRes.ok) socket.emit('friend:request_sent', { to_user_id: userRes.user.id });
   }
 }
 
-// Pending requests
+$('add-contact-btn').onclick = addContact;
+$('add-contact-input').addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') addContact();
+});
+
 async function loadPendingRequests() {
   const data = await api('GET', '/api/friends/requests');
   if (!data.ok) return;
   const section = $('requests-section');
-  const list    = $('requests-list');
+  const list = $('requests-list');
   list.innerHTML = '';
 
   if (!data.requests.length) {
@@ -236,242 +294,406 @@ async function loadPendingRequests() {
   }
   section.classList.remove('hidden');
 
-  data.requests.forEach(r => {
+  data.requests.forEach((request) => {
     const div = document.createElement('div');
     div.className = 'request-item';
     div.innerHTML = `
-      <img src="${r.avatar_url || 'img/default-avatar.png'}" class="contact-avatar" style="width:24px;height:24px" alt="">
-      <span class="req-name">${escHtml(r.display_name || r.username)}<br><small>${r.msn_id}</small></span>
-      <button class="req-accept" data-id="${r.req_id}">✓</button>
-      <button class="req-reject" data-id="${r.req_id}">✕</button>
+      <img src="${request.avatar_url || 'img/default-avatar.png'}" class="contact-avatar request-avatar" alt="" />
+      <span class="req-name">${escHtml(request.display_name || request.username)}<br><small>${request.msn_id}</small></span>
+      <button class="req-accept" data-id="${request.req_id}">✓</button>
+      <button class="req-reject" data-id="${request.req_id}">✕</button>
     `;
     list.appendChild(div);
   });
 
-  list.querySelectorAll('.req-accept').forEach(btn => {
-    btn.onclick = async () => {
-      await api('POST', `/api/friends/accept/${btn.dataset.id}`);
-      await loadFriends();
-      await loadPendingRequests();
-      toast('ตอบรับคำขอเป็นเพื่อนแล้ว 🤝');
+  list.querySelectorAll('.req-accept').forEach((button) => {
+    button.onclick = async () => {
+      await api('POST', `/api/friends/accept/${button.dataset.id}`);
+      await Promise.all([loadFriends(), loadPendingRequests()]);
+      toast('ตอบรับคำขอเป็นเพื่อนแล้ว');
     };
   });
-  list.querySelectorAll('.req-reject').forEach(btn => {
-    btn.onclick = async () => {
-      await api('POST', `/api/friends/reject/${btn.dataset.id}`);
+
+  list.querySelectorAll('.req-reject').forEach((button) => {
+    button.onclick = async () => {
+      await api('POST', `/api/friends/reject/${button.dataset.id}`);
       await loadPendingRequests();
     };
   });
 }
 
-// ── Chat ─────────────────────────────────────────────
-async function openChat(friend) {
-  if (chatWindows[friend.id]) {
-    chatWindows[friend.id].querySelector('.chat-input').focus();
+async function loadGroups() {
+  const data = await api('GET', '/api/chat/groups');
+  if (!data.ok) return;
+  groups = data.groups;
+  renderGroups();
+}
+
+function renderGroups() {
+  const list = $('groups-list');
+  list.innerHTML = '';
+  groups.forEach((group) => {
+    const item = document.createElement('div');
+    item.className = 'contact-item group-item';
+    item.innerHTML = `
+      <span class="group-badge">👥</span>
+      <div class="contact-info">
+        <div class="contact-name">${escHtml(group.title)}</div>
+        <div class="contact-status-msg">${group.member_count} members${group.last_msg ? ` · ${escHtml(group.last_msg)}` : ''}</div>
+      </div>
+    `;
+    item.onclick = () => openGroupChat(group);
+    list.appendChild(item);
+  });
+}
+
+function renderGroupComposerMembers() {
+  const list = $('group-member-list');
+  list.innerHTML = '';
+  if (!friends.length) {
+    list.innerHTML = '<p class="empty-note">Add at least one friend to create a group.</p>';
     return;
+  }
+
+  friends.forEach((friend) => {
+    const label = document.createElement('label');
+    label.className = 'group-member-item';
+    label.innerHTML = `
+      <input type="checkbox" value="${friend.id}" />
+      <img class="contact-avatar group-member-avatar" src="${friend.avatar_url || 'img/default-avatar.png'}" alt="" />
+      <span>${escHtml(friend.display_name || friend.username)}</span>
+    `;
+    list.appendChild(label);
+  });
+}
+
+$('toggle-group-composer').onclick = () => {
+  $('group-composer').classList.toggle('hidden');
+  renderGroupComposerMembers();
+};
+
+$('cancel-group-btn').onclick = () => {
+  $('group-composer').classList.add('hidden');
+  $('group-title-input').value = '';
+};
+
+$('create-group-btn').onclick = async () => {
+  const title = $('group-title-input').value.trim();
+  const memberIds = [...$('group-member-list').querySelectorAll('input:checked')].map((input) => Number(input.value));
+  const data = await api('POST', '/api/chat/groups', { title, member_ids: memberIds });
+  if (!data.ok) {
+    toast(data.error || 'สร้างกลุ่มไม่สำเร็จ');
+    return;
+  }
+
+  $('group-composer').classList.add('hidden');
+  $('group-title-input').value = '';
+  await loadGroups();
+  const group = groups.find((entry) => entry.id === data.group.id) || { ...data.group, member_count: memberIds.length + 1 };
+  openGroupChat(group);
+  toast('สร้างกลุ่มใหม่แล้ว');
+};
+
+function buildWindowMeta(kind, source) {
+  if (kind === 'direct') {
+    return {
+      key: directKey(source.id),
+      kind,
+      targetId: source.id,
+      title: source.display_name || source.username,
+      subtitle: source.status || 'offline',
+      avatar: source.avatar_url || 'img/default-avatar.png',
+      contact: source,
+    };
+  }
+
+  return {
+    key: groupKey(source.id),
+    kind,
+    targetId: source.id,
+    title: source.title,
+    subtitle: `${source.member_count || 0} members`,
+    avatar: 'img/default-avatar.png',
+    group: source,
+  };
+}
+
+async function openDirectChat(friend) {
+  return openConversationWindow(buildWindowMeta('direct', friend));
+}
+
+async function openGroupChat(group) {
+  return openConversationWindow(buildWindowMeta('group', group));
+}
+
+async function openConversationWindow(meta) {
+  if (chatWindows[meta.key]) {
+    chatWindows[meta.key].querySelector('.chat-input').focus();
+    return chatWindows[meta.key];
   }
 
   const tpl = document.getElementById('chat-window-tpl');
   const win = tpl.content.cloneNode(true).querySelector('.chat-window');
-  win.dataset.convUser = friend.id;
+  win.dataset.chatKey = meta.key;
+  win.dataset.chatKind = meta.kind;
+  win.dataset.targetId = meta.targetId;
 
-  // Fill header
-  win.querySelector('.chat-partner-name').textContent     = friend.display_name || friend.username;
-  win.querySelector('.chat-partner-display').textContent  = friend.display_name || friend.username;
-  win.querySelector('.chat-partner-status').textContent   = friend.status || 'offline';
-  if (friend.avatar_url) win.querySelector('.chat-partner-avatar').src = friend.avatar_url;
+  win.querySelector('.chat-partner-name').textContent = meta.title;
+  win.querySelector('.chat-partner-display').textContent = meta.title;
+  win.querySelector('.chat-partner-status').textContent = meta.subtitle;
+  win.querySelector('.chat-partner-avatar').src = meta.avatar;
 
-  // Position offset
   const offset = Object.keys(chatWindows).length * 28;
-  win.style.top  = `${60 + offset}px`;
+  win.style.top = `${60 + offset}px`;
   win.style.left = `${320 + offset}px`;
 
-  // Close
+  const input = win.querySelector('.chat-input');
+  const fileInput = win.querySelector('.file-input');
+  const typingIndicator = win.querySelector('.typing-indicator');
+  if (meta.kind === 'group') typingIndicator.classList.add('hidden');
+
   win.querySelector('.chat-close').onclick = () => {
     win.remove();
-    delete chatWindows[friend.id];
+    delete chatWindows[meta.key];
   };
 
-  // Send
-  const input  = win.querySelector('.chat-input');
-  const sendBtn = win.querySelector('.send-btn');
-
-  sendBtn.onclick = () => sendMessage(friend, win, input);
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(friend, win, input);
+  win.querySelector('.send-btn').onclick = () => sendTextMessage(meta, win, input);
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      sendTextMessage(meta, win, input);
     }
   });
 
-  // Typing indicator
-  input.addEventListener('input', () => {
-    if (socket) socket.emit('typing:start', { to_user_id: friend.id });
-    clearTimeout(typingTimers[friend.id]);
-    typingTimers[friend.id] = setTimeout(() => {
-      if (socket) socket.emit('typing:stop', { to_user_id: friend.id });
-    }, TYPING_DEBOUNCE);
-  });
-
-  // Nudge / Wink
-  win.querySelector('.nudge-btn').onclick = () => sendMessage(friend, win, null, 'nudge', '💥 Nudge!');
-  win.querySelector('.wink-btn').onclick  = () => sendMessage(friend, win, null, 'wink', '😜 Wink~');
-
-  document.getElementById('chat-windows').appendChild(win);
-  chatWindows[friend.id] = win;
-
-  makeDraggable(win, win.querySelector('.chat-titlebar'));
-
-  // Load history
-  const data = await api('GET', `/api/chat/${friend.id}/messages`);
-  if (data.ok) {
-    data.messages.forEach(m => appendMessage(win, m, friend));
+  if (meta.kind === 'direct') {
+    input.addEventListener('input', () => {
+      if (socket) socket.emit('typing:start', { to_user_id: meta.targetId });
+      clearTimeout(typingTimers[meta.key]);
+      typingTimers[meta.key] = setTimeout(() => {
+        if (socket) socket.emit('typing:stop', { to_user_id: meta.targetId });
+      }, TYPING_DEBOUNCE);
+    });
   }
 
-  const msgs = win.querySelector('.chat-messages');
-  msgs.scrollTop = msgs.scrollHeight;
+  win.querySelector('.nudge-btn').onclick = () => sendTextMessage(meta, win, null, 'nudge', '💥 Nudge!');
+  win.querySelector('.wink-btn').onclick = () => sendTextMessage(meta, win, null, 'wink', '😜 Wink~');
+  win.querySelector('.attach-btn').onclick = () => fileInput.click();
+  fileInput.onchange = () => sendFileMessage(meta, win, fileInput, input);
+
+  $('chat-windows').appendChild(win);
+  chatWindows[meta.key] = win;
+  makeDraggable(win, win.querySelector('.chat-titlebar'));
+
+  const historyPath = meta.kind === 'direct'
+    ? `/api/chat/${meta.targetId}/messages`
+    : `/api/chat/conversations/${meta.targetId}/messages`;
+  const history = await api('GET', historyPath);
+  if (history.ok) {
+    history.messages.forEach((message) => appendMessage(win, message, meta));
+  }
+
+  win.querySelector('.chat-messages').scrollTop = win.querySelector('.chat-messages').scrollHeight;
   input.focus();
+  return win;
 }
 
-async function sendMessage(friend, win, inputEl, type = 'text', preset = null) {
+async function sendTextMessage(meta, win, inputEl, msgType = 'text', preset = null) {
   const content = preset ?? (inputEl ? inputEl.value.trim() : '');
   if (!content) return;
 
-  new Promise(resolve => {
-    if (socket && socket.connected) {
-      socket.emit('message:send', { to_user_id: friend.id, content, msg_type: type }, (ack) => {
-        if (ack?.ok) resolve(ack.message);
-        else resolve(null);
-      });
-    } else {
-      api('POST', `/api/chat/${friend.id}/send`, { content, msg_type: type }).then(r => resolve(r.ok ? r.message : null));
-    }
-  }).then(msg => {
-    if (msg) {
-      appendMessage(win, { ...msg, sender_id: me.id }, friend);
-      const msgs = win.querySelector('.chat-messages');
-      msgs.scrollTop = msgs.scrollHeight;
-    }
-  });
+  const payload = meta.kind === 'direct'
+    ? { to_user_id: meta.targetId, content, msg_type: msgType }
+    : { conversation_id: meta.targetId, content, msg_type: msgType };
 
-  if (inputEl) inputEl.value = '';
+  const message = await sendPayload(meta, payload, msgType === 'file' ? '/send-file' : '/send');
+  if (message) {
+    appendMessage(win, message, meta);
+    win.querySelector('.chat-messages').scrollTop = win.querySelector('.chat-messages').scrollHeight;
+    if (inputEl) inputEl.value = '';
+  }
 }
 
-function appendMessage(win, msg, friend) {
-  const msgs  = win.querySelector('.chat-messages');
-  const isMine = msg.sender_id === me.id;
+async function sendFileMessage(meta, win, fileInput, inputEl) {
+  const file = fileInput.files[0];
+  if (!file) return;
+  if (file.size > 1024 * 1024) {
+    toast('ไฟล์ต้องไม่เกิน 1MB');
+    fileInput.value = '';
+    return;
+  }
 
+  if (!settings.allow_file_transfer) {
+    toast('คุณปิดการส่งไฟล์ไว้ใน Settings');
+    fileInput.value = '';
+    return;
+  }
+
+  const attachment = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({
+      name: file.name,
+      type: file.type || 'application/octet-stream',
+      size: file.size,
+      data: reader.result,
+    });
+    reader.readAsDataURL(file);
+  });
+
+  const payload = meta.kind === 'direct'
+    ? { to_user_id: meta.targetId, content: inputEl.value.trim(), msg_type: 'file', attachment }
+    : { conversation_id: meta.targetId, content: inputEl.value.trim(), msg_type: 'file', attachment };
+
+  const message = await sendPayload(meta, payload, '/send-file');
+  if (message) {
+    appendMessage(win, message, meta);
+    win.querySelector('.chat-messages').scrollTop = win.querySelector('.chat-messages').scrollHeight;
+    inputEl.value = '';
+    fileInput.value = '';
+  }
+}
+
+async function sendPayload(meta, payload, fallbackSuffix) {
+  if (socket && socket.connected) {
+    const response = await new Promise((resolve) => {
+      socket.emit('message:send', payload, resolve);
+    });
+    if (response?.ok) return response.message;
+    toast(response?.error || 'ส่งข้อความไม่สำเร็จ');
+    return null;
+  }
+
+  const endpoint = meta.kind === 'direct'
+    ? `/api/chat/${meta.targetId}${fallbackSuffix}`
+    : `/api/chat/conversations/${meta.targetId}${fallbackSuffix}`;
+  const response = await api('POST', endpoint, meta.kind === 'direct'
+    ? { content: payload.content, msg_type: payload.msg_type, attachment: payload.attachment, caption: payload.content }
+    : { content: payload.content, msg_type: payload.msg_type, attachment: payload.attachment, caption: payload.content });
+  if (!response.ok) {
+    toast(response.error || 'ส่งข้อความไม่สำเร็จ');
+    return null;
+  }
+  return response.message;
+}
+
+function appendMessage(win, msg, meta) {
   const row = document.createElement('div');
+  const isMine = msg.sender_id === me.id;
   row.className = `msg-row ${isMine ? 'mine' : 'theirs'}`;
 
-  const senderName = isMine ? (me.display_name || me.username) : (friend.display_name || friend.username);
+  const senderName = msg.sender_name || (isMine ? (me.display_name || me.username) : meta.title);
+  let bodyHtml = '';
+
+  if (msg.msg_type === 'file' && msg.attachment_data) {
+    bodyHtml = `
+      <div class="file-card">
+        <a class="file-link" href="${msg.attachment_data}" download="${escHtml(msg.attachment_name || 'file')}">${escHtml(msg.attachment_name || 'Download file')}</a>
+        <small>${Math.max(1, Math.round((msg.attachment_size || 0) / 1024))} KB</small>
+      </div>
+    `;
+    if (msg.content) bodyHtml += `<div class="file-caption">${escHtml(msg.content)}</div>`;
+  } else {
+    bodyHtml = escHtml(msg.content);
+  }
 
   row.innerHTML = `
     <div class="msg-sender">${escHtml(senderName)}</div>
-    <div class="msg-bubble ${msg.msg_type !== 'text' ? escHtml(msg.msg_type) : ''}">${escHtml(msg.content)}</div>
+    <div class="msg-bubble ${msg.msg_type !== 'text' ? escHtml(msg.msg_type) : ''}">${bodyHtml}</div>
     <div class="msg-time">${fmtTime(msg.sent_at)}</div>
   `;
-
-  msgs.appendChild(row);
+  win.querySelector('.chat-messages').appendChild(row);
 }
 
-// ── Socket.io ─────────────────────────────────────────
 function connectSocket() {
   socket = io({ auth: { token: '' }, withCredentials: true });
 
-  socket.on('connect_error', () => {
-    // Cookie-based auth; no action needed
-  });
-
-  socket.on('message:new', (msg) => {
-    const fromId = msg.sender_id;
-    if (!chatWindows[fromId]) {
-      // Find friend object
-      const f = friends.find(fr => fr.id === fromId);
-      if (f) {
-        openChat(f).then(() => {
-          const win = chatWindows[fromId];
-          if (win) {
-            appendMessage(win, msg, f);
-            win.querySelector('.chat-messages').scrollTop = 9999;
-          }
-        });
-        toast(`💬 ข้อความใหม่จาก ${f.display_name || f.username}`);
+  socket.on('message:new', async (msg) => {
+    if (msg.conversation_kind === 'group') {
+      const key = groupKey(msg.conversation_id);
+      let win = chatWindows[key];
+      if (!win) {
+        const group = groups.find((entry) => entry.id === msg.conversation_id) || {
+          id: msg.conversation_id,
+          title: msg.conversation_title || 'Group Chat',
+          member_count: 0,
+        };
+        win = await openGroupChat(group);
       }
-    } else {
-      const win = chatWindows[fromId];
-      const f   = friends.find(fr => fr.id === fromId) || { display_name: msg.sender_name };
-      appendMessage(win, msg, f);
+      if (win) {
+        appendMessage(win, msg, buildWindowMeta('group', groups.find((entry) => entry.id === msg.conversation_id) || { id: msg.conversation_id, title: msg.conversation_title || 'Group Chat', member_count: 0 }));
+        win.querySelector('.chat-messages').scrollTop = 9999;
+      }
+      toast(`👥 ข้อความใหม่ใน ${msg.conversation_title || 'Group Chat'}`);
+      loadGroups();
+      return;
+    }
+
+    const peerUserId = msg.sender_id === me.id ? msg.peer_user_id : msg.sender_id;
+    const key = directKey(peerUserId);
+    let win = chatWindows[key];
+    const friend = friends.find((entry) => entry.id === peerUserId) || { id: peerUserId, display_name: msg.sender_name, status: 'online' };
+    if (!win) {
+      win = await openDirectChat(friend);
+      toast(`💬 ข้อความใหม่จาก ${friend.display_name || friend.username}`);
+    }
+    if (win) {
+      appendMessage(win, msg, buildWindowMeta('direct', friend));
       win.querySelector('.chat-messages').scrollTop = 9999;
     }
   });
 
   socket.on('typing:start', ({ from_user_id, name }) => {
-    const win = chatWindows[from_user_id];
+    const win = chatWindows[directKey(from_user_id)];
     if (!win) return;
-    const el = win.querySelector('.typing-indicator');
-    el.querySelector('#typing-text').textContent = `${name} กำลังพิมพ์...`;
-    el.classList.remove('hidden');
+    win.querySelector('.typing-text').textContent = `${name} กำลังพิมพ์...`;
+    win.querySelector('.typing-indicator').classList.remove('hidden');
   });
 
   socket.on('typing:stop', ({ from_user_id }) => {
-    const win = chatWindows[from_user_id];
+    const win = chatWindows[directKey(from_user_id)];
     if (!win) return;
     win.querySelector('.typing-indicator').classList.add('hidden');
   });
 
   socket.on('status:changed', ({ user_id, status }) => {
-    const f = friends.find(fr => fr.id === user_id);
-    if (f) {
-      f.status = status;
-      renderFriends();
-      // Update open chat window header
-      const win = chatWindows[user_id];
-      if (win) win.querySelector('.chat-partner-status').textContent = status;
-    }
+    const friend = friends.find((entry) => entry.id === user_id);
+    if (!friend) return;
+    friend.status = status;
+    renderFriends();
+    const win = chatWindows[directKey(user_id)];
+    if (win) win.querySelector('.chat-partner-status').textContent = status;
   });
 
   socket.on('friend:request_received', (sender) => {
-    toast(`👤 ${sender.display_name || sender.username} ขอเป็นเพื่อน! (${sender.msn_id})`);
+    toast(`👤 ${sender.display_name || sender.username} ขอเป็นเพื่อน (${sender.msn_id})`);
     loadPendingRequests();
   });
 }
 
-// ── Drag ─────────────────────────────────────────────
 function makeDraggable(win, handle) {
-  let ox = 0, oy = 0;
-  handle.addEventListener('pointerdown', e => {
-    e.preventDefault();
+  let ox = 0;
+  let oy = 0;
+  handle.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
     const rect = win.getBoundingClientRect();
-    ox = e.clientX - rect.left;
-    oy = e.clientY - rect.top;
+    ox = event.clientX - rect.left;
+    oy = event.clientY - rect.top;
     win.style.zIndex = 300;
 
-    function onMove(e) {
-      win.style.left = `${Math.max(0, e.clientX - ox)}px`;
-      win.style.top  = `${Math.max(0, e.clientY - oy)}px`;
+    function onMove(moveEvent) {
+      win.style.left = `${Math.max(0, moveEvent.clientX - ox)}px`;
+      win.style.top = `${Math.max(0, moveEvent.clientY - oy)}px`;
     }
+
     function onUp() {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     }
+
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
   });
 }
 
-// Make buddy window draggable
 makeDraggable($('buddy-window'), $('buddy-window').querySelector('.msn-titlebar'));
 
-// ── Security: escape HTML ─────────────────────────────
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
-
-// ── Boot ─────────────────────────────────────────────
 init();

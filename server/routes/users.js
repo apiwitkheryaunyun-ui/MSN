@@ -2,11 +2,17 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/schema');
 const auth = require('../middleware');
+const {
+  isValidMsnId,
+  sanitizeDisplayName,
+  sanitizeStatusMessage,
+  isValidStatus,
+} = require('../validators');
 
 // GET /api/users/search?msn_id=XXXXXXXXXX
 router.get('/search', auth, async (req, res) => {
   const { msn_id } = req.query;
-  if (!msn_id || !/^\d{10}$/.test(msn_id)) {
+  if (!isValidMsnId(msn_id)) {
     return res.status(400).json({ error: 'MSN ID ต้องเป็นตัวเลข 10 หลัก' });
   }
   if (msn_id === req.user.msn_id) {
@@ -33,17 +39,16 @@ router.get('/profile/:msn_id', auth, async (req, res) => {
 // PATCH /api/users/me  — update own profile
 router.patch('/me', auth, async (req, res) => {
   const { display_name, status_msg, status, avatar_url } = req.body;
-  const validStatuses = ['online', 'away', 'busy', 'be right back', 'appear offline'];
   const updates = [];
   const vals = [];
 
   if (display_name !== undefined) {
-    updates.push('display_name = ?'); vals.push(String(display_name).trim().slice(0, 50));
+    updates.push('display_name = ?'); vals.push(sanitizeDisplayName(display_name));
   }
   if (status_msg !== undefined) {
-    updates.push('status_msg = ?'); vals.push(String(status_msg).slice(0, 140));
+    updates.push('status_msg = ?'); vals.push(sanitizeStatusMessage(status_msg));
   }
-  if (status !== undefined && validStatuses.includes(status)) {
+  if (status !== undefined && isValidStatus(status)) {
     updates.push('status = ?'); vals.push(status);
   }
   if (avatar_url !== undefined) {

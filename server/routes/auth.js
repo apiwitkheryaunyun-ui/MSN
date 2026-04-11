@@ -3,6 +3,12 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../db/schema');
+const rateLimit = require('../middleware/rateLimit');
+const {
+  isValidEmail,
+  isValidUsername,
+  sanitizeDisplayName,
+} = require('../validators');
 
 const SALT_ROUNDS = 12;
 const JWT_SECRET = process.env.JWT_SECRET || 'change_this_in_production';
@@ -26,12 +32,8 @@ async function generateMsnId() {
   return id;
 }
 
-// Validate input — only allow expected characters
-function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
-function isValidUsername(u) { return /^[a-zA-Z0-9_]{3,30}$/.test(u); }
-
 // POST /api/auth/register
-router.post('/register', async (req, res) => {
+router.post('/register', rateLimit({ key: 'register', limit: 8, windowMs: 10 * 60_000 }), async (req, res) => {
   try {
     const { username, email, password, display_name } = req.body;
 
@@ -56,7 +58,7 @@ router.post('/register', async (req, res) => {
 
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
     const msn_id = await generateMsnId();
-    const dname = (display_name || username).slice(0, 50);
+    const dname = sanitizeDisplayName(display_name || username);
 
     const info = await db.run(
       'INSERT INTO users (msn_id, username, email, password, display_name) VALUES (?,?,?,?,?)',
@@ -77,7 +79,7 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', rateLimit({ key: 'login', limit: 15, windowMs: 10 * 60_000 }), async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {

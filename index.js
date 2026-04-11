@@ -5,22 +5,24 @@ const { Server } = require('socket.io');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const path = require('path');
-const fs = require('fs');
 
 const db = require('./server/db/schema');
 const authRouter = require('./server/routes/auth');
 const usersRouter = require('./server/routes/users');
 const friendsRouter = require('./server/routes/friends');
 const settingsRouter = require('./server/routes/settings');
-const { router: chatRouter, getOrCreateConv } = require('./server/routes/chat');
+const configRouter = require('./server/routes/config');
 const {
-  getConversationById,
-  ensureAcceptedFriendship,
-  ensureConversationMember,
-  getConversationRecipients,
-  createMessage,
-} = require('./server/services/chatService');
-const { isValidMessageType, sanitizeText, validateAttachment } = require('./server/validators');
+  router: chatRouter,
+  getOrCreateConv,
+  requireAcceptedFriendship,
+  requireConversationMember,
+  insertMessage,
+  getGroup,
+  getGroupMembers,
+  mapMessageForDirect,
+  mapMessageForGroup,
+} = require('./server/routes/chat');
 
 const app = express();
 const server = http.createServer(app);
@@ -32,43 +34,16 @@ const io = new Server(server, {
   cookie: true
 });
 
-// �� Middleware ������������������������������������������������
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '12mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const uploadsDir = process.env.LOCAL_STORAGE_PATH || path.join(__dirname, 'data/uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-app.use('/uploads', express.static(uploadsDir));
-
-// �� API Routes ������������������������������������������������
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/friends', friendsRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/config', configRouter);
 app.use('/api/chat', chatRouter);
-
-app.get('/api/config/webrtc', (req, res) => {
-  const stunUrls = (process.env.WEBRTC_STUN_URLS || 'stun:stun.l.google.com:19302')
-    .split(',')
-    .map((v) => v.trim())
-    .filter(Boolean);
-  const turnUrls = (process.env.WEBRTC_TURN_URLS || '')
-    .split(',')
-    .map((v) => v.trim())
-    .filter(Boolean);
-
-  const iceServers = [{ urls: stunUrls }];
-  if (turnUrls.length && process.env.WEBRTC_TURN_USERNAME && process.env.WEBRTC_TURN_CREDENTIAL) {
-    iceServers.push({
-      urls: turnUrls,
-      username: process.env.WEBRTC_TURN_USERNAME,
-      credential: process.env.WEBRTC_TURN_CREDENTIAL,
-    });
-  }
-
-  return res.json({ ok: true, webrtc: { iceServers } });
-});
 
 // SPA fallback
 app.get('/{*path}', (req, res) => {
@@ -76,8 +51,27 @@ app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// �� Socket.io �������������������������������������������������
 const onlineUsers = new Map();
+
+function emitToUser(userId, eventName, payload, exceptSocketId = null) {
+  const sockets = onlineUsers.get(Number(userId));
+  if (!sockets) {
+    return;
+  }
+
+  sockets.forEach((socketId) => {
+    if (exceptSocketId && socketId === exceptSocketId) {
+      return;
+    }
+    io.to(socketId).emit(eventName, payload);
+  });
+}
+
+function emitToMany(userIds, eventName, payload, exceptSocketId = null) {
+  Array.from(new Set(userIds.map((value) => Number(value)).filter(Boolean))).forEach((userId) => {
+    emitToUser(userId, eventName, payload, exceptSocketId);
+  });
+}
 
 io.use((socket, next) => {
   const token = socket.handshake.auth.token ||
@@ -130,93 +124,64 @@ io.on('connection', async (socket) => {
   socket.on('message:send', async (payload, ack) => {
     try {
       const msgType = payload?.msg_type || 'text';
-      if (!isValidMessageType(msgType)) return;
+      const content = String(payload?.content || '').trim().slice(0, 4000);
 
-      const attachmentCheck = validateAttachment(payload?.attachment);
-      if (!attachmentCheck.ok) {
-        if (typeof ack === 'function') ack({ ok: false, error: attachmentCheck.error });
+      if (!['text', 'nudge', 'wink', 'file'].includes(msgType)) {
+        if (typeof ack === 'function') ack({ ok: false, error: 'ประเภทข้อความไม่ถูกต้อง' });
+        return;
+      }
+      if (msgType !== 'file' && !content) {
+        if (typeof ack === 'function') ack({ ok: false, error: 'กรุณากรอกข้อความ' });
         return;
       }
 
-      let convId;
-      let recipients = [];
-      let conversationKind = 'direct';
-      let conversationTitle = '';
-
       if (payload?.conversation_id) {
-        const conversationId = parseInt(payload.conversation_id, 10);
-        const conv = await getConversationById(conversationId);
-        if (!conv || conv.kind !== 'group') {
-          if (typeof ack === 'function') ack({ ok: false, error: 'ไม่พบห้องแชตกลุ่ม' });
-          return;
-        }
-        const member = await ensureConversationMember(conversationId, uid);
-        if (!member) {
-          if (typeof ack === 'function') ack({ ok: false, error: 'ไม่มีสิทธิ์ในห้องนี้' });
+        const conversationId = Number(payload.conversation_id);
+        const member = await requireConversationMember(conversationId, uid);
+        const group = await getGroup(conversationId);
+        if (!member || !group) {
+          if (typeof ack === 'function') ack({ ok: false, error: 'ไม่พบกลุ่ม' });
           return;
         }
 
-        convId = conversationId;
-        conversationKind = 'group';
-        conversationTitle = conv.title;
-        recipients = (await getConversationRecipients(convId, uid)).map(row => row.user_id);
-      } else {
-        const targetUserId = parseInt(payload?.to_user_id, 10);
-        const friendship = await ensureAcceptedFriendship(uid, targetUserId);
-        if (!friendship) {
-          if (typeof ack === 'function') ack({ ok: false, error: 'ต้องเป็นเพื่อนกันก่อนจึงส่งข้อความได้' });
-          return;
-        }
-        convId = await getOrCreateConv(uid, targetUserId);
-        recipients = [targetUserId];
+        const stored = await insertMessage({
+          conversationId,
+          senderId: uid,
+          content,
+          msgType,
+          attachment: payload.attachment,
+        });
+        const outbound = mapMessageForGroup(stored, group.title);
+        const members = await getGroupMembers(conversationId);
+        emitToMany(members.map((memberRow) => memberRow.id), 'message:new', outbound, socket.id);
+        if (typeof ack === 'function') ack({ ok: true, message: outbound });
+        return;
       }
 
-      const inserted = await createMessage({
-        conversationId: convId,
+      const targetUserId = Number(payload?.to_user_id);
+      const friendship = await requireAcceptedFriendship(uid, targetUserId);
+      if (!friendship) {
+        if (typeof ack === 'function') ack({ ok: false, error: 'ต้องเป็นเพื่อนกันก่อนจึงส่งข้อความได้' });
+        return;
+      }
+
+      const conversationId = await getOrCreateConv(uid, targetUserId);
+      const stored = await insertMessage({
+        conversationId,
         senderId: uid,
-        content: sanitizeText(payload?.content, msgType === 'file' ? 280 : 4000),
+        content,
         msgType,
-        attachment: attachmentCheck.attachment,
+        attachment: payload.attachment,
       });
+      const outbound = mapMessageForDirect(stored, targetUserId);
 
-      const sender = await db.get('SELECT display_name, avatar_url, username FROM users WHERE id=?', [uid]);
-      const messagePayload = {
-        ...inserted,
-        sender_name: sender.display_name,
-        sender_avatar: sender.avatar_url,
-        conversation_id: convId,
-        conversation_kind: conversationKind,
-        conversation_title: conversationTitle,
-        peer_user_id: payload?.to_user_id || null,
-      };
-
-      recipients.forEach((recipientId) => {
-        const recipientSockets = onlineUsers.get(recipientId);
-        if (recipientSockets) {
-          recipientSockets.forEach((sid) => io.to(sid).emit('message:new', messagePayload));
-        }
-      });
-
-      if (conversationKind === 'group') {
-        recipients.forEach((recipientId) => {
-          const recipientSockets = onlineUsers.get(recipientId);
-          if (recipientSockets) {
-            recipientSockets.forEach((sid) => io.to(sid).emit('group:updated', { conversation_id: convId }));
-          }
-        });
-      }
-
-      const senderSockets = onlineUsers.get(uid);
-      if (senderSockets) {
-        senderSockets.forEach((sid) => {
-          if (sid !== socket.id) io.to(sid).emit('message:new', messagePayload);
-        });
-      }
-
-      if (typeof ack === 'function') ack({ ok: true, message: messagePayload });
+      emitToUser(targetUserId, 'message:new', outbound);
+      emitToUser(uid, 'message:new', outbound, socket.id);
+      if (typeof ack === 'function') ack({ ok: true, message: outbound });
     } catch (error) {
-      console.error('socket message error', error);
-      if (typeof ack === 'function') ack({ ok: false, error: 'ส่งข้อความไม่สำเร็จ' });
+      if (typeof ack === 'function') {
+        ack({ ok: false, error: error.message || 'ส่งข้อความไม่สำเร็จ' });
+      }
     }
   });
 
@@ -243,61 +208,40 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('group:notify', ({ conversation_id, member_ids = [], type = 'updated' }) => {
-    const targets = [...new Set((member_ids || []).map(Number).filter(Boolean))];
-    targets.forEach((targetId) => {
-      const sockets = onlineUsers.get(targetId);
-      if (sockets) {
-        sockets.forEach((sid) => io.to(sid).emit('group:updated', { conversation_id, type }));
-      }
-    });
+  socket.on('group:notify', ({ member_ids = [] }) => {
+    emitToMany(member_ids, 'group:updated', { by_user_id: uid }, socket.id);
   });
 
-  socket.on('call:invite', ({ to_user_id, call_id, call_type = 'voice', conversation_id }) => {
-    const recipientSockets = onlineUsers.get(Number(to_user_id));
-    if (!recipientSockets) return;
-    recipientSockets.forEach((sid) => io.to(sid).emit('call:incoming', {
-      from_user_id: uid,
-      call_id,
-      call_type,
-      conversation_id: conversation_id || null,
-    }));
+  socket.on('call:invite', async ({ to_user_id, call_id, call_type }) => {
+    const friendship = await requireAcceptedFriendship(uid, Number(to_user_id));
+    if (!friendship) {
+      return;
+    }
+    emitToUser(to_user_id, 'call:incoming', { from_user_id: uid, call_id, call_type });
   });
 
   socket.on('call:accept', ({ to_user_id, call_id }) => {
-    const recipientSockets = onlineUsers.get(Number(to_user_id));
-    if (!recipientSockets) return;
-    recipientSockets.forEach((sid) => io.to(sid).emit('call:accepted', { from_user_id: uid, call_id }));
+    emitToUser(to_user_id, 'call:accepted', { from_user_id: uid, call_id });
   });
 
   socket.on('call:reject', ({ to_user_id, call_id }) => {
-    const recipientSockets = onlineUsers.get(Number(to_user_id));
-    if (!recipientSockets) return;
-    recipientSockets.forEach((sid) => io.to(sid).emit('call:rejected', { from_user_id: uid, call_id }));
+    emitToUser(to_user_id, 'call:rejected', { from_user_id: uid, call_id });
   });
 
   socket.on('call:end', ({ to_user_id, call_id }) => {
-    const recipientSockets = onlineUsers.get(Number(to_user_id));
-    if (!recipientSockets) return;
-    recipientSockets.forEach((sid) => io.to(sid).emit('call:ended', { from_user_id: uid, call_id }));
+    emitToUser(to_user_id, 'call:ended', { from_user_id: uid, call_id });
   });
 
   socket.on('webrtc:offer', ({ to_user_id, call_id, sdp }) => {
-    const recipientSockets = onlineUsers.get(Number(to_user_id));
-    if (!recipientSockets) return;
-    recipientSockets.forEach((sid) => io.to(sid).emit('webrtc:offer', { from_user_id: uid, call_id, sdp }));
+    emitToUser(to_user_id, 'webrtc:offer', { from_user_id: uid, call_id, sdp });
   });
 
   socket.on('webrtc:answer', ({ to_user_id, call_id, sdp }) => {
-    const recipientSockets = onlineUsers.get(Number(to_user_id));
-    if (!recipientSockets) return;
-    recipientSockets.forEach((sid) => io.to(sid).emit('webrtc:answer', { from_user_id: uid, call_id, sdp }));
+    emitToUser(to_user_id, 'webrtc:answer', { from_user_id: uid, call_id, sdp });
   });
 
   socket.on('webrtc:ice-candidate', ({ to_user_id, call_id, candidate }) => {
-    const recipientSockets = onlineUsers.get(Number(to_user_id));
-    if (!recipientSockets) return;
-    recipientSockets.forEach((sid) => io.to(sid).emit('webrtc:ice-candidate', { from_user_id: uid, call_id, candidate }));
+    emitToUser(to_user_id, 'webrtc:ice-candidate', { from_user_id: uid, call_id, candidate });
   });
 });
 
@@ -315,7 +259,6 @@ async function broadcastStatusToFriends(userId, status) {
   });
 }
 
-// �� Start �����������������������������������������������������
 const PORT = process.env.PORT || 3000;
 
 async function main() {

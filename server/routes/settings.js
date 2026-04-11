@@ -2,21 +2,36 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/schema');
 const auth = require('../middleware');
-const {
-  isValidTheme,
-  isValidPrivacyMode,
-  normalizeBoolean,
-} = require('../validators');
+
+const DEFAULT_SETTINGS = {
+  theme: 'classic',
+  privacy_mode: 'everyone',
+  sounds_enabled: 1,
+  allow_friend_requests: 1,
+  allow_file_transfer: 1,
+};
 
 async function ensureSettings(userId) {
+  const existing = await db.get('SELECT * FROM user_settings WHERE user_id = ?', [userId]);
+  if (existing) {
+    return { ...DEFAULT_SETTINGS, ...existing };
+  }
+
   await db.run(
-    `INSERT INTO user_settings (user_id)
-     SELECT ?
-     WHERE NOT EXISTS (SELECT 1 FROM user_settings WHERE user_id = ?)`,
-    [userId, userId]
+    `INSERT INTO user_settings (
+      user_id, theme, privacy_mode, sounds_enabled, allow_friend_requests, allow_file_transfer
+    ) VALUES (?,?,?,?,?,?)`,
+    [
+      userId,
+      DEFAULT_SETTINGS.theme,
+      DEFAULT_SETTINGS.privacy_mode,
+      DEFAULT_SETTINGS.sounds_enabled,
+      DEFAULT_SETTINGS.allow_friend_requests,
+      DEFAULT_SETTINGS.allow_file_transfer,
+    ]
   );
 
-  return db.get('SELECT * FROM user_settings WHERE user_id = ?', [userId]);
+  return { user_id: userId, ...DEFAULT_SETTINGS };
 }
 
 router.get('/me', auth, async (req, res) => {
@@ -25,40 +40,42 @@ router.get('/me', auth, async (req, res) => {
 });
 
 router.patch('/me', auth, async (req, res) => {
-  const updates = [];
-  const params = [];
-  const { theme, sounds_enabled, allow_friend_requests, allow_file_transfer, privacy_mode } = req.body;
+  await ensureSettings(req.user.userId);
 
-  if (theme !== undefined) {
-    if (!isValidTheme(theme)) return res.status(400).json({ error: 'ธีมไม่ถูกต้อง' });
+  const updates = [];
+  const values = [];
+  const allowedThemes = new Set(['classic', 'olive', 'silver']);
+  const allowedPrivacy = new Set(['everyone', 'contacts-only']);
+
+  if (req.body.theme !== undefined && allowedThemes.has(req.body.theme)) {
     updates.push('theme = ?');
-    params.push(theme);
+    values.push(req.body.theme);
   }
-  if (sounds_enabled !== undefined) {
-    updates.push('sounds_enabled = ?');
-    params.push(normalizeBoolean(sounds_enabled));
-  }
-  if (allow_friend_requests !== undefined) {
-    updates.push('allow_friend_requests = ?');
-    params.push(normalizeBoolean(allow_friend_requests));
-  }
-  if (allow_file_transfer !== undefined) {
-    updates.push('allow_file_transfer = ?');
-    params.push(normalizeBoolean(allow_file_transfer));
-  }
-  if (privacy_mode !== undefined) {
-    if (!isValidPrivacyMode(privacy_mode)) return res.status(400).json({ error: 'ค่าความเป็นส่วนตัวไม่ถูกต้อง' });
+  if (req.body.privacy_mode !== undefined && allowedPrivacy.has(req.body.privacy_mode)) {
     updates.push('privacy_mode = ?');
-    params.push(privacy_mode);
+    values.push(req.body.privacy_mode);
+  }
+  if (req.body.sounds_enabled !== undefined) {
+    updates.push('sounds_enabled = ?');
+    values.push(req.body.sounds_enabled ? 1 : 0);
+  }
+  if (req.body.allow_friend_requests !== undefined) {
+    updates.push('allow_friend_requests = ?');
+    values.push(req.body.allow_friend_requests ? 1 : 0);
+  }
+  if (req.body.allow_file_transfer !== undefined) {
+    updates.push('allow_file_transfer = ?');
+    values.push(req.body.allow_file_transfer ? 1 : 0);
   }
 
   if (!updates.length) {
-    return res.status(400).json({ error: 'ไม่มีค่าที่จะอัปเดต' });
+    const settings = await ensureSettings(req.user.userId);
+    return res.json({ ok: true, settings });
   }
 
-  await ensureSettings(req.user.userId);
-  params.push(req.user.userId);
-  await db.run(`UPDATE user_settings SET ${updates.join(', ')} WHERE user_id = ?`, params);
+  updates.push("updated_at = strftime('%s','now')");
+  values.push(req.user.userId);
+  await db.run(`UPDATE user_settings SET ${updates.join(', ')} WHERE user_id = ?`, values);
 
   const settings = await ensureSettings(req.user.userId);
   return res.json({ ok: true, settings });

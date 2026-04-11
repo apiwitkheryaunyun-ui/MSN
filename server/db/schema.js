@@ -24,166 +24,6 @@ function extractTableName(sql) {
 const isPG = !!process.env.DATABASE_URL;
 let adapter;
 
-const SHARED_SCHEMA = {
-  pg: {
-    create: `
-      CREATE TABLE IF NOT EXISTS users (
-        id           SERIAL PRIMARY KEY,
-        msn_id       TEXT    NOT NULL UNIQUE,
-        username     TEXT    NOT NULL,
-        email        TEXT    NOT NULL UNIQUE,
-        password     TEXT    NOT NULL,
-        display_name TEXT    NOT NULL DEFAULT '',
-        status       TEXT    NOT NULL DEFAULT 'offline',
-        status_msg   TEXT    NOT NULL DEFAULT '',
-        avatar_url   TEXT    NOT NULL DEFAULT '',
-        created_at   INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER,
-        last_seen    INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER
-      );
-      CREATE TABLE IF NOT EXISTS friends (
-        id         SERIAL PRIMARY KEY,
-        user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        friend_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        status     TEXT    NOT NULL DEFAULT 'pending',
-        created_at INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER,
-        UNIQUE(user_id, friend_id)
-      );
-      CREATE TABLE IF NOT EXISTS conversations (
-        id         SERIAL PRIMARY KEY,
-        kind       TEXT    NOT NULL DEFAULT 'direct',
-        title      TEXT    NOT NULL DEFAULT '',
-        owner_id   INTEGER,
-        created_at INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER
-      );
-      CREATE TABLE IF NOT EXISTS conversation_members (
-        conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-        user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        PRIMARY KEY (conversation_id, user_id)
-      );
-      CREATE TABLE IF NOT EXISTS messages (
-        id              SERIAL PRIMARY KEY,
-        conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-        sender_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        content         TEXT    NOT NULL,
-        msg_type        TEXT    NOT NULL DEFAULT 'text',
-        attachment_name TEXT    NOT NULL DEFAULT '',
-        attachment_type TEXT    NOT NULL DEFAULT '',
-        attachment_size INTEGER NOT NULL DEFAULT 0,
-        attachment_key  TEXT    NOT NULL DEFAULT '',
-        attachment_url  TEXT    NOT NULL DEFAULT '',
-        attachment_data TEXT    NOT NULL DEFAULT '',
-        sent_at         INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER,
-        is_read         INTEGER NOT NULL DEFAULT 0
-      );
-      CREATE TABLE IF NOT EXISTS user_settings (
-        user_id               INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-        theme                 TEXT    NOT NULL DEFAULT 'classic',
-        sounds_enabled        INTEGER NOT NULL DEFAULT 1,
-        allow_friend_requests INTEGER NOT NULL DEFAULT 1,
-        allow_file_transfer   INTEGER NOT NULL DEFAULT 1,
-        privacy_mode          TEXT    NOT NULL DEFAULT 'everyone'
-      );
-      CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, sent_at);
-      CREATE INDEX IF NOT EXISTS idx_friends_user  ON friends(user_id, status);
-      CREATE INDEX IF NOT EXISTS idx_users_msn_id  ON users(msn_id);
-    `,
-    migrations: [
-      "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'direct'",
-      "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT ''",
-      'ALTER TABLE conversations ADD COLUMN IF NOT EXISTS owner_id INTEGER',
-      "ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_name TEXT NOT NULL DEFAULT ''",
-      "ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_type TEXT NOT NULL DEFAULT ''",
-      'ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_size INTEGER NOT NULL DEFAULT 0',
-      "ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_key TEXT NOT NULL DEFAULT ''",
-      "ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_url TEXT NOT NULL DEFAULT ''",
-      "ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_data TEXT NOT NULL DEFAULT ''",
-      `CREATE TABLE IF NOT EXISTS user_settings (
-        user_id               INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-        theme                 TEXT    NOT NULL DEFAULT 'classic',
-        sounds_enabled        INTEGER NOT NULL DEFAULT 1,
-        allow_friend_requests INTEGER NOT NULL DEFAULT 1,
-        allow_file_transfer   INTEGER NOT NULL DEFAULT 1,
-        privacy_mode          TEXT    NOT NULL DEFAULT 'everyone'
-      )`,
-      'CREATE INDEX IF NOT EXISTS idx_conv_kind ON conversations(kind, created_at)'
-    ]
-  },
-  sqlite: {
-    create: `
-      CREATE TABLE IF NOT EXISTS users (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        msn_id       TEXT    NOT NULL UNIQUE,
-        username     TEXT    NOT NULL,
-        email        TEXT    NOT NULL UNIQUE,
-        password     TEXT    NOT NULL,
-        display_name TEXT    NOT NULL DEFAULT '',
-        status       TEXT    NOT NULL DEFAULT 'offline',
-        status_msg   TEXT    NOT NULL DEFAULT '',
-        avatar_url   TEXT    NOT NULL DEFAULT '',
-        created_at   INTEGER NOT NULL DEFAULT (strftime('%s','now')),
-        last_seen    INTEGER NOT NULL DEFAULT (strftime('%s','now'))
-      );
-      CREATE TABLE IF NOT EXISTS friends (
-        id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        friend_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        status     TEXT    NOT NULL DEFAULT 'pending',
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
-        UNIQUE(user_id, friend_id)
-      );
-      CREATE TABLE IF NOT EXISTS conversations (
-        id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        kind       TEXT    NOT NULL DEFAULT 'direct',
-        title      TEXT    NOT NULL DEFAULT '',
-        owner_id   INTEGER,
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
-      );
-      CREATE TABLE IF NOT EXISTS conversation_members (
-        conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-        user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        PRIMARY KEY (conversation_id, user_id)
-      );
-      CREATE TABLE IF NOT EXISTS messages (
-        id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-        sender_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        content         TEXT    NOT NULL,
-        msg_type        TEXT    NOT NULL DEFAULT 'text',
-        attachment_name TEXT    NOT NULL DEFAULT '',
-        attachment_type TEXT    NOT NULL DEFAULT '',
-        attachment_size INTEGER NOT NULL DEFAULT 0,
-        attachment_key  TEXT    NOT NULL DEFAULT '',
-        attachment_url  TEXT    NOT NULL DEFAULT '',
-        attachment_data TEXT    NOT NULL DEFAULT '',
-        sent_at         INTEGER NOT NULL DEFAULT (strftime('%s','now')),
-        is_read         INTEGER NOT NULL DEFAULT 0
-      );
-      CREATE TABLE IF NOT EXISTS user_settings (
-        user_id               INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-        theme                 TEXT    NOT NULL DEFAULT 'classic',
-        sounds_enabled        INTEGER NOT NULL DEFAULT 1,
-        allow_friend_requests INTEGER NOT NULL DEFAULT 1,
-        allow_file_transfer   INTEGER NOT NULL DEFAULT 1,
-        privacy_mode          TEXT    NOT NULL DEFAULT 'everyone'
-      );
-      CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, sent_at);
-      CREATE INDEX IF NOT EXISTS idx_friends_user  ON friends(user_id, status);
-      CREATE INDEX IF NOT EXISTS idx_users_msn_id  ON users(msn_id);
-    `,
-    columns: [
-      ['conversations', 'kind', "TEXT NOT NULL DEFAULT 'direct'"],
-      ['conversations', 'title', "TEXT NOT NULL DEFAULT ''"],
-      ['conversations', 'owner_id', 'INTEGER'],
-      ['messages', 'attachment_name', "TEXT NOT NULL DEFAULT ''"],
-      ['messages', 'attachment_type', "TEXT NOT NULL DEFAULT ''"],
-      ['messages', 'attachment_size', 'INTEGER NOT NULL DEFAULT 0'],
-      ['messages', 'attachment_key', "TEXT NOT NULL DEFAULT ''"],
-      ['messages', 'attachment_url', "TEXT NOT NULL DEFAULT ''"],
-      ['messages', 'attachment_data', "TEXT NOT NULL DEFAULT ''"]
-    ]
-  }
-};
-
 /* ══════════════════════════════════════════════════════
    PostgreSQL adapter
 ══════════════════════════════════════════════════════ */
@@ -209,12 +49,94 @@ if (isPG) {
       "FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER");
   }
 
+  const PG_MIGRATIONS = [
+    `ALTER TABLE conversations ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE conversations ADD COLUMN IF NOT EXISTS owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL`,
+    `ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_group INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_name TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_type TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_data TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_size INTEGER NOT NULL DEFAULT 0`,
+    `CREATE TABLE IF NOT EXISTS user_settings (
+      user_id                INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      theme                  TEXT    NOT NULL DEFAULT 'classic',
+      privacy_mode           TEXT    NOT NULL DEFAULT 'everyone',
+      sounds_enabled         INTEGER NOT NULL DEFAULT 1,
+      allow_friend_requests  INTEGER NOT NULL DEFAULT 1,
+      allow_file_transfer    INTEGER NOT NULL DEFAULT 1,
+      updated_at             INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_conversations_group ON conversations(is_group)`,
+  ];
+
+  const PG_SCHEMA = `
+    CREATE TABLE IF NOT EXISTS users (
+      id           SERIAL PRIMARY KEY,
+      msn_id       TEXT    NOT NULL UNIQUE,
+      username     TEXT    NOT NULL,
+      email        TEXT    NOT NULL UNIQUE,
+      password     TEXT    NOT NULL,
+      display_name TEXT    NOT NULL DEFAULT '',
+      status       TEXT    NOT NULL DEFAULT 'offline',
+      status_msg   TEXT    NOT NULL DEFAULT '',
+      avatar_url   TEXT    NOT NULL DEFAULT '',
+      created_at   INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER,
+      last_seen    INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS friends (
+      id         SERIAL PRIMARY KEY,
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      friend_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status     TEXT    NOT NULL DEFAULT 'pending',
+      created_at INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER,
+      UNIQUE(user_id, friend_id)
+    );
+    CREATE TABLE IF NOT EXISTS conversations (
+      id         SERIAL PRIMARY KEY,
+      title      TEXT    NOT NULL DEFAULT '',
+      owner_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      is_group   INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS conversation_members (
+      conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      PRIMARY KEY (conversation_id, user_id)
+    );
+    CREATE TABLE IF NOT EXISTS messages (
+      id              SERIAL PRIMARY KEY,
+      conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      sender_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      content         TEXT    NOT NULL,
+      msg_type        TEXT    NOT NULL DEFAULT 'text',
+      attachment_name TEXT    NOT NULL DEFAULT '',
+      attachment_type TEXT    NOT NULL DEFAULT '',
+      attachment_data TEXT    NOT NULL DEFAULT '',
+      attachment_size INTEGER NOT NULL DEFAULT 0,
+      sent_at         INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER,
+      is_read         INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS user_settings (
+      user_id                INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      theme                  TEXT    NOT NULL DEFAULT 'classic',
+      privacy_mode           TEXT    NOT NULL DEFAULT 'everyone',
+      sounds_enabled         INTEGER NOT NULL DEFAULT 1,
+      allow_friend_requests  INTEGER NOT NULL DEFAULT 1,
+      allow_file_transfer    INTEGER NOT NULL DEFAULT 1,
+      updated_at             INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, sent_at);
+    CREATE INDEX IF NOT EXISTS idx_friends_user  ON friends(user_id, status);
+    CREATE INDEX IF NOT EXISTS idx_users_msn_id  ON users(msn_id);
+    CREATE INDEX IF NOT EXISTS idx_conversations_group ON conversations(is_group);
+  `;
+
   adapter = {
     isPG: true,
     async init() {
-      await pool.query(SHARED_SCHEMA.pg.create);
-      for (const statement of SHARED_SCHEMA.pg.migrations) {
-        await pool.query(statement);
+      await pool.query(PG_SCHEMA);
+      for (const sql of PG_MIGRATIONS) {
+        await pool.query(sql);
       }
       console.log('PostgreSQL schema ready');
     },
@@ -258,25 +180,92 @@ if (isPG) {
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
 
-  function hasColumn(table, column) {
-    const rows = sqlite.prepare(`PRAGMA table_info(${table})`).all();
-    return rows.some((row) => row.name === column);
+  function sqliteColumnExists(tableName, columnName) {
+    const rows = sqlite.prepare(`PRAGMA table_info(${tableName})`).all();
+    return rows.some((row) => row.name === columnName);
   }
 
-  function ensureColumn(table, column, definition) {
-    if (!hasColumn(table, column)) {
-      sqlite.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  function ensureSqliteColumn(tableName, columnName, definition) {
+    if (sqliteColumnExists(tableName, columnName)) {
+      return;
     }
+
+    sqlite.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
   }
+
+  const SQLITE_SCHEMA = `
+    CREATE TABLE IF NOT EXISTS users (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      msn_id      TEXT    NOT NULL UNIQUE,
+      username    TEXT    NOT NULL,
+      email       TEXT    NOT NULL UNIQUE,
+      password    TEXT    NOT NULL,
+      display_name TEXT   NOT NULL DEFAULT '',
+      status      TEXT    NOT NULL DEFAULT 'offline',
+      status_msg  TEXT    NOT NULL DEFAULT '',
+      avatar_url  TEXT    NOT NULL DEFAULT '',
+      created_at  INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+      last_seen   INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    );
+    CREATE TABLE IF NOT EXISTS friends (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      friend_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status      TEXT    NOT NULL DEFAULT 'pending',
+      created_at  INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+      UNIQUE(user_id, friend_id)
+    );
+    CREATE TABLE IF NOT EXISTS conversations (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      title      TEXT    NOT NULL DEFAULT '',
+      owner_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      is_group   INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    );
+    CREATE TABLE IF NOT EXISTS conversation_members (
+      conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      PRIMARY KEY (conversation_id, user_id)
+    );
+    CREATE TABLE IF NOT EXISTS messages (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      sender_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      content         TEXT    NOT NULL,
+      msg_type        TEXT    NOT NULL DEFAULT 'text',
+      attachment_name TEXT    NOT NULL DEFAULT '',
+      attachment_type TEXT    NOT NULL DEFAULT '',
+      attachment_data TEXT    NOT NULL DEFAULT '',
+      attachment_size INTEGER NOT NULL DEFAULT 0,
+      sent_at         INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+      is_read         INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS user_settings (
+      user_id               INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      theme                 TEXT    NOT NULL DEFAULT 'classic',
+      privacy_mode          TEXT    NOT NULL DEFAULT 'everyone',
+      sounds_enabled        INTEGER NOT NULL DEFAULT 1,
+      allow_friend_requests INTEGER NOT NULL DEFAULT 1,
+      allow_file_transfer   INTEGER NOT NULL DEFAULT 1,
+      updated_at            INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, sent_at);
+    CREATE INDEX IF NOT EXISTS idx_friends_user  ON friends(user_id, status);
+    CREATE INDEX IF NOT EXISTS idx_users_msn_id  ON users(msn_id);
+  `;
 
   adapter = {
     isPG: false,
     init() {
-      sqlite.exec(SHARED_SCHEMA.sqlite.create);
-      SHARED_SCHEMA.sqlite.columns.forEach(([table, column, definition]) => {
-        ensureColumn(table, column, definition);
-      });
-      sqlite.exec('CREATE INDEX IF NOT EXISTS idx_conv_kind ON conversations(kind, created_at)');
+      sqlite.exec(SQLITE_SCHEMA);
+      ensureSqliteColumn('conversations', 'title', "TEXT NOT NULL DEFAULT ''");
+      ensureSqliteColumn('conversations', 'owner_id', 'INTEGER REFERENCES users(id) ON DELETE SET NULL');
+      ensureSqliteColumn('conversations', 'is_group', 'INTEGER NOT NULL DEFAULT 0');
+      ensureSqliteColumn('messages', 'attachment_name', "TEXT NOT NULL DEFAULT ''");
+      ensureSqliteColumn('messages', 'attachment_type', "TEXT NOT NULL DEFAULT ''");
+      ensureSqliteColumn('messages', 'attachment_data', "TEXT NOT NULL DEFAULT ''");
+      ensureSqliteColumn('messages', 'attachment_size', 'INTEGER NOT NULL DEFAULT 0');
+      sqlite.exec('CREATE INDEX IF NOT EXISTS idx_conversations_group ON conversations(is_group)');
       console.log('SQLite schema ready');
       return Promise.resolve();
     },

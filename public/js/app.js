@@ -18,8 +18,13 @@ let chatWindows = {};
 let typingTimers = {};
 let webrtcConfig = { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] };
 let activeCalls = new Map();
+const isEmbeddedMode = window.self !== window.top;
 
 const TYPING_DEBOUNCE = 1500;
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_AVATAR_EXPORT_BYTES = 320 * 1024;
+const AVATAR_CANVAS_SIZE = 180;
+const OPEN_CONVERSATIONS_KEY = 'msn-open-conversations';
 const $ = (id) => document.getElementById(id);
 const authScreen = $('auth-screen');
 const app = $('app');
@@ -60,7 +65,106 @@ async function api(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(path, opts);
-  return res.json();
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { ok: false, error: text || `Request failed: ${res.status}` };
+  }
+}
+
+function estimateDataUrlBytes(dataUrl) {
+  const base64 = String(dataUrl).split(',')[1] || '';
+  const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
+  return Math.max(0, Math.floor((base64.length * 3) / 4) - padding);
+}
+
+function loadImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('อ่านรูปภาพไม่สำเร็จ'));
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('ไฟล์รูปภาพไม่ถูกต้อง'));
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function buildAvatarDataUrl(file) {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('อัปโหลดได้เฉพาะไฟล์รูปภาพ');
+  }
+
+  const image = await loadImageFile(file);
+  const canvas = document.createElement('canvas');
+  canvas.width = AVATAR_CANVAS_SIZE;
+  canvas.height = AVATAR_CANVAS_SIZE;
+  const context = canvas.getContext('2d');
+
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const ratio = Math.min(canvas.width / image.width, canvas.height / image.height);
+  const drawWidth = image.width * ratio;
+  const drawHeight = image.height * ratio;
+  const offsetX = (canvas.width - drawWidth) / 2;
+  const offsetY = (canvas.height - drawHeight) / 2;
+
+  context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+
+  let quality = 0.92;
+  let dataUrl = canvas.toDataURL('image/jpeg', quality);
+  while (estimateDataUrlBytes(dataUrl) > MAX_AVATAR_EXPORT_BYTES && quality > 0.45) {
+    quality -= 0.08;
+    dataUrl = canvas.toDataURL('image/jpeg', quality);
+  }
+
+  return dataUrl;
+}
+
+function readOpenConversationState() {
+  try {
+    return JSON.parse(localStorage.getItem(OPEN_CONVERSATIONS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function writeOpenConversationState(entries) {
+  localStorage.setItem(OPEN_CONVERSATIONS_KEY, JSON.stringify(entries.slice(0, 6)));
+}
+
+function rememberOpenConversation(meta) {
+  const entries = readOpenConversationState().filter((entry) => entry.key !== meta.key);
+  entries.unshift({ key: meta.key, kind: meta.kind, targetId: meta.targetId });
+  writeOpenConversationState(entries);
+}
+
+function forgetOpenConversation(chatKey) {
+  writeOpenConversationState(readOpenConversationState().filter((entry) => entry.key !== chatKey));
+}
+
+async function restoreOpenConversations() {
+  const entries = readOpenConversationState();
+  for (const entry of entries) {
+    if (entry.kind === 'direct') {
+      const friend = friends.find((item) => Number(item.id) === Number(entry.targetId));
+      if (friend) {
+        await openDirectChat(friend);
+      }
+      continue;
+    }
+
+    if (entry.kind === 'group') {
+      const group = groups.find((item) => Number(item.id) === Number(entry.targetId));
+      if (group) {
+        await openGroupChat(group);
+      }
+    }
+  }
 }
 
 function applyTheme() {
@@ -120,11 +224,23 @@ async function init() {
 async function startApp() {
   authScreen.classList.add('hidden');
   app.classList.remove('hidden');
+  if (isEmbeddedMode) {
+    document.body.classList.add('embedded-msn');
+    app.classList.add('embedded-msn-app');
+  }
   setProfileFields();
   await Promise.all([loadSettings(), loadWebrtcConfig(), loadFriends(), loadGroups(), loadPendingRequests()]);
   connectSocket();
+  await restoreOpenConversations();
   setInterval(loadPendingRequests, 30000);
   setInterval(loadGroups, 45000);
+}
+
+function activateEmbeddedChat(targetWin) {
+  if (!isEmbeddedMode) return;
+  const chatContainer = $('chat-windows');
+  const windows = chatContainer.querySelectorAll('.chat-window');
+  windows.forEach((win) => win.classList.toggle('hidden', win !== targetWin));
 }
 
 $('goto-register').onclick = () => {
@@ -200,20 +316,22 @@ $('status-select').onchange = async () => {
 $('avatar-input').onchange = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) {
-    toast('รูปใหญ่เกิน 2MB ครับ');
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const avatar_url = reader.result;
+
+  try {
+    const avatar_url = await buildAvatarDataUrl(file);
     const data = await api('PATCH', '/api/users/me', { avatar_url });
     if (data.ok) {
       me = { ...me, ...data.user };
       setProfileFields();
+      toast('บันทึกรูปโปรไฟล์แล้ว');
+    } else {
+      toast(data.error || 'บันทึกรูปโปรไฟล์ไม่สำเร็จ');
     }
-  };
-  reader.readAsDataURL(file);
+  } catch (error) {
+    toast(error.message || 'อัปโหลดรูปโปรไฟล์ไม่สำเร็จ');
+  } finally {
+    event.target.value = '';
+  }
 };
 
 $('copy-id-btn').onclick = () => {
@@ -437,6 +555,7 @@ async function openGroupChat(group) {
 
 async function openConversationWindow(meta) {
   if (chatWindows[meta.key]) {
+    activateEmbeddedChat(chatWindows[meta.key]);
     chatWindows[meta.key].querySelector('.chat-input').focus();
     return chatWindows[meta.key];
   }
@@ -452,9 +571,11 @@ async function openConversationWindow(meta) {
   win.querySelector('.chat-partner-status').textContent = meta.subtitle;
   win.querySelector('.chat-partner-avatar').src = meta.avatar;
 
-  const offset = Object.keys(chatWindows).length * 28;
-  win.style.top = `${60 + offset}px`;
-  win.style.left = `${320 + offset}px`;
+  if (!isEmbeddedMode) {
+    const offset = Object.keys(chatWindows).length * 28;
+    win.style.top = `${60 + offset}px`;
+    win.style.left = `${320 + offset}px`;
+  }
 
   const input = win.querySelector('.chat-input');
   const fileInput = win.querySelector('.file-input');
@@ -475,8 +596,13 @@ async function openConversationWindow(meta) {
 
   win.querySelector('.chat-close').onclick = () => {
     endCallForWindow(win, true);
+    forgetOpenConversation(meta.key);
     win.remove();
     delete chatWindows[meta.key];
+    if (isEmbeddedMode) {
+      const nextWin = Object.values(chatWindows)[0];
+      if (nextWin) activateEmbeddedChat(nextWin);
+    }
   };
 
   win.querySelector('.send-btn').onclick = () => sendTextMessage(meta, win, input);
@@ -519,7 +645,22 @@ async function openConversationWindow(meta) {
 
   $('chat-windows').appendChild(win);
   chatWindows[meta.key] = win;
-  makeDraggable(win, win.querySelector('.chat-titlebar'));
+  if (isEmbeddedMode) {
+    const headerActions = win.querySelector('.chat-header-actions');
+    if (headerActions && !headerActions.querySelector('.embedded-close-btn')) {
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'chat-mini-btn embedded-close-btn';
+      closeBtn.title = 'Close chat';
+      closeBtn.textContent = 'x';
+      closeBtn.onclick = () => win.querySelector('.chat-close').click();
+      headerActions.appendChild(closeBtn);
+    }
+  }
+  rememberOpenConversation(meta);
+  if (!isEmbeddedMode) {
+    makeDraggable(win, win.querySelector('.chat-titlebar'));
+  }
+  activateEmbeddedChat(win);
 
   const historyPath = meta.kind === 'direct'
     ? `/api/chat/${meta.targetId}/messages`
@@ -613,6 +754,7 @@ async function leaveGroup(meta, win) {
     return;
   }
   endCallForWindow(win, true);
+  forgetOpenConversation(meta.key);
   win.remove();
   delete chatWindows[meta.key];
   await loadGroups();
@@ -638,8 +780,8 @@ async function sendTextMessage(meta, win, inputEl, msgType = 'text', preset = nu
 async function sendFileMessage(meta, win, fileInput, inputEl) {
   const file = fileInput.files[0];
   if (!file) return;
-  if (file.size > 1024 * 1024) {
-    toast('ไฟล์ต้องไม่เกิน 1MB');
+  if (file.size > MAX_FILE_BYTES) {
+    toast('ไฟล์ต้องไม่เกิน 5MB');
     fileInput.value = '';
     return;
   }
@@ -707,8 +849,10 @@ function appendMessage(win, msg, meta) {
 
   if (msg.msg_type === 'file' && (msg.attachment_url || msg.attachment_data)) {
     const href = msg.attachment_url || msg.attachment_data;
+    const isImageAttachment = String(msg.attachment_type || '').startsWith('image/');
     bodyHtml = `
       <div class="file-card">
+        ${isImageAttachment ? `<a href="${href}" target="_blank" rel="noopener"><img class="chat-inline-image" src="${href}" alt="${escHtml(msg.attachment_name || 'image')}" /></a>` : ''}
         <a class="file-link" href="${href}" download="${escHtml(msg.attachment_name || 'file')}" target="_blank" rel="noopener">${escHtml(msg.attachment_name || 'Download file')}</a>
         <small>${Math.max(1, Math.round((msg.attachment_size || 0) / 1024))} KB</small>
       </div>
@@ -804,9 +948,14 @@ function connectSocket() {
       return;
     }
 
-    socket.emit('call:accept', { to_user_id: from_user_id, call_id });
-    const win = await openDirectChat(friend);
-    await beginPeerConnection(win, from_user_id, call_id, call_type, false);
+    try {
+      socket.emit('call:accept', { to_user_id: from_user_id, call_id });
+      const win = await openDirectChat(friend);
+      await beginPeerConnection(win, from_user_id, call_id, call_type, false);
+    } catch (error) {
+      socket.emit('call:reject', { to_user_id: from_user_id, call_id });
+      toast(error.message || 'เปิดไมค์หรือกล้องไม่สำเร็จ');
+    }
   });
 
   socket.on('call:accepted', async ({ from_user_id, call_id }) => {
@@ -816,6 +965,10 @@ function connectSocket() {
     const offer = await state.pc.createOffer();
     await state.pc.setLocalDescription(offer);
     socket.emit('webrtc:offer', { to_user_id: from_user_id, call_id, sdp: offer });
+    const win = chatWindows[key];
+    if (win) {
+      win.querySelector('.call-status').textContent = `Connecting ${state.callType} call...`;
+    }
   });
 
   socket.on('call:rejected', ({ from_user_id }) => {
@@ -846,6 +999,7 @@ function connectSocket() {
     const state = activeCalls.get(win.dataset.chatKey);
     if (!state) return;
     await state.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+    win.querySelector('.call-status').textContent = `${state.callType} call live`;
   });
 
   socket.on('webrtc:ice-candidate', async ({ from_user_id, candidate }) => {
@@ -863,13 +1017,22 @@ async function initiateCall(meta, win, callType) {
     return;
   }
   const callId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  await beginPeerConnection(win, meta.targetId, callId, callType, true);
-  socket.emit('call:invite', { to_user_id: meta.targetId, call_id: callId, call_type: callType });
+  try {
+    await beginPeerConnection(win, meta.targetId, callId, callType, true);
+    socket.emit('call:invite', { to_user_id: meta.targetId, call_id: callId, call_type: callType });
+  } catch (error) {
+    toast(error.message || 'เริ่มสายสนทนาไม่สำเร็จ');
+    endCallForWindow(win, true);
+  }
 }
 
 async function beginPeerConnection(win, peerUserId, callId, callType, outgoing) {
   const key = win.dataset.chatKey;
   endCallForWindow(win, true);
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error('เบราว์เซอร์นี้ยังไม่รองรับการโทร');
+  }
 
   const localStream = await navigator.mediaDevices.getUserMedia({
     audio: true,
@@ -953,6 +1116,11 @@ function makeDraggable(win, handle) {
   });
 }
 
-makeDraggable($('buddy-window'), $('buddy-window').querySelector('.msn-titlebar'));
+if (isEmbeddedMode) {
+  $('buddy-window').style.left = '';
+  $('buddy-window').style.top = '';
+} else {
+  makeDraggable($('buddy-window'), $('buddy-window').querySelector('.msn-titlebar'));
+}
 
 init();

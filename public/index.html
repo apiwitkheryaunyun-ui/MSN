@@ -1,232 +1,893 @@
 <!DOCTYPE html>
 <html lang="th">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MSN Messenger</title>
-  <link rel="stylesheet" href="css/msn.css" />
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0" />
+    <title>XP Desktop Forum</title>
+    <meta
+      name="description"
+      content="Windows XP desktop style forum mockup built with clean original code."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="desktop" id="desktop">
+      <section class="desktop-icons" aria-label="Desktop shortcuts">
+        <button class="icon-btn" type="button" data-open-app="msn" title="Click to open">
+          <span class="icon icon-msn" aria-hidden="true"></span>
+          <span>MSN Live</span>
+        </button>
+        <button class="icon-btn" type="button" data-open-app="forum" title="Click to open">
+          <span class="icon icon-forum" aria-hidden="true"></span>
+          <span>History Wiki</span>
+        </button>
+        <button class="icon-btn" type="button" data-open-app="media" title="Click to open">
+          <span class="icon icon-media" aria-hidden="true"></span>
+          <span>Media Player</span>
+        </button>
+        <button class="icon-btn" type="button" data-open-app="widgets" title="Click to open">
+          <span class="icon icon-widget" aria-hidden="true"></span>
+          <span>Widgets</span>
+        </button>
+        <button class="icon-btn" type="button" data-open-app="portfolio" title="Click to open">
+          <span class="icon icon-chat" aria-hidden="true"></span>
+          <span>Portfolio</span>
+        </button>
+        <button class="icon-btn" type="button" data-open-app="topics" title="Click to open">
+          <span class="icon icon-files" aria-hidden="true"></span>
+          <span>Topics</span>
+        </button>
+      </section>
 
-<!-- ═══════════════════════════════════════════
-     AUTH SCREEN
-═══════════════════════════════════════════ -->
-<div id="auth-screen" class="auth-screen">
-  <div class="auth-box">
-    <div class="auth-logo">
-      <div class="butterfly-logo"></div>
-      <span class="msn-brand">MSN<sup>®</sup> Messenger</span>
+      <aside class="desktop-sidebar" id="desktop-sidebar" aria-label="Vista style gadget sidebar">
+        <section class="desktop-gadget gadget-clock" data-gadget="clock">
+          <header>Clock</header>
+          <div class="analog-clock" id="analog-clock">
+            <span class="clock-hand hour"></span>
+            <span class="clock-hand minute"></span>
+            <span class="clock-hand second"></span>
+            <span class="clock-pin"></span>
+          </div>
+        </section>
+
+        <section class="desktop-gadget gadget-weather" data-gadget="weather">
+          <header>Weather</header>
+          <div class="weather-main">
+            <strong id="weather-temp">64°</strong>
+            <span id="weather-city">Palo Alto</span>
+          </div>
+          <p id="weather-summary">Sunny and clear</p>
+        </section>
+
+        <section class="desktop-gadget gadget-meter" data-gadget="cpu">
+          <header>CPU Meter</header>
+          <div class="meter dual-meter">
+            <span id="cpu-meter-bar"></span>
+          </div>
+          <p id="cpu-meter-text">CPU 24%</p>
+        </section>
+
+        <section class="desktop-gadget gadget-note" data-gadget="note">
+          <header>Notes</header>
+          <textarea id="widget-note" rows="5" placeholder="พิมพ์โน้ตไว้ได้..." aria-label="Sticky note"></textarea>
+        </section>
+
+        <section class="desktop-gadget gadget-photo" data-gadget="photo">
+          <header>Photo Frame</header>
+          <img id="photo-frame-image" src="Asset/Photo Frame & Wallpaper/Ascent.jpg" alt="Gadget photo frame" class="photo-frame-image" />
+          <div class="photo-frame-controls">
+            <button type="button" id="photo-prev">Prev</button>
+            <button type="button" id="photo-next">Next</button>
+          </div>
+        </section>
+      </aside>
+
+      <section class="window-layer" id="window-layer">
+        <section class="xp-window utility-window is-hidden" data-app="msn" aria-label="MSN Launcher window">
+          <header class="titlebar" data-drag-handle="true">
+            <div class="title-left">
+              <span class="title-dot" aria-hidden="true"></span>
+              <strong>MSN Messenger Live</strong>
+            </div>
+            <div class="window-controls">
+              <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
+              <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
+              <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
+            </div>
+          </header>
+          <div class="window-toolbar">
+            <button type="button">MSN</button>
+            <a class="msn-open-tab" href="msn.html" target="_blank" rel="noopener noreferrer">Open in New Tab</a>
+          </div>
+          <div class="utility-content msn-launch-panel">
+            
+            <iframe
+              class="msn-launch-frame"
+              src="msn.html"
+              title="MSN Messenger"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            ></iframe>
+          </div>
+        </section>
+
+        <main class="xp-window" data-app="forum" aria-label="Forum Explorer window">
+          <header class="titlebar" data-drag-handle="true">
+            <div class="title-left">
+              <span class="title-dot" aria-hidden="true"></span>
+              <strong>Forum Explorer</strong>
+            </div>
+            <div class="window-controls">
+              <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
+              <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
+              <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
+            </div>
+          </header>
+
+          <div class="window-toolbar">
+            <button type="button">File</button>
+            <button type="button">Edit</button>
+            <button type="button">View</button>
+            <button type="button">Favorites</button>
+            <button type="button">Help</button>
+          </div>
+
+          <div class="window-content wiki-layout">
+            <aside class="side-panel wiki-sidebar">
+              <h2>Table of Contents</h2>
+              <ul class="wiki-toc">
+                <li><a href="#wiki-introduction">Introduction to Frutiger Aero</a></li>
+                <li><a href="#wiki-early">Early Development (2001-2005)</a></li>
+                <li><a href="#wiki-aero">Development of Windows Aero (2005-2009)</a></li>
+                <li><a href="#wiki-stock">Stock Imagery and Advertisements</a></li>
+                <li><a href="#wiki-games">Frutiger Aero in Video Games</a></li>
+                <li><a href="#wiki-smartphone">The Smartphone Revolution (2007)</a></li>
+                <li><a href="#wiki-flat">Popularization of Flat Design (2012)</a></li>
+                <li><a href="#wiki-cari">CARI coins the term "Frutiger Aero" (2017)</a></li>
+                <li><a href="#wiki-revival">Revival on Social Media (2022-Present)</a></li>
+                <li><a href="#wiki-sources">Main References / Sources</a></li>
+              </ul>
+              <div class="status-block">
+                <span class="label">SPECIAL THANKS</span>
+                <strong>ขอบคุณผู้ทดสอบระบบ</strong>
+                <ul class="tester-thanks-list" aria-label="รายชื่อผู้ทดสอบระบบ">
+                  <li>เน็ตสสสสส</li>
+                  <li>bang</li>
+                  <li>Ddayz</li>
+                  <li>Little_Busy</li>
+                  <li>SodaImwWasabi</li>
+                </ul>
+              </div>
+            </aside>
+
+            <section class="forum-panel wiki-article">
+              <article class="notice clay-card wiki-hero">
+                <span class="section-label">History Page</span>
+                <h2>History of Frutiger Aero</h2>
+                <p>
+                  This section is a brief explanation of the history of the Frutiger Aero aesthetic, from what led
+                  to its rise in popularity, up to its downfall and eventual revival on social media. For a quick
+                  explanation of the term Frutiger Aero, jump to the Introduction section.
+                </p>
+                <img src="Asset/windows_vista.jpg" alt="Header Image" class="wiki-image hero-image" />
+              </article>
+
+              <article class="thread-card swatch-matcha clay-card" id="wiki-introduction">
+                <span class="thread-tag">Introduction to Frutiger Aero</span>
+                <p>
+                  Before we delve into the history of "Frutiger Aero", we need to understand what it is even referring
+                  to. The term, coined in 2017, is used to define or categorize a certain aesthetic that was present
+                  from approximately 2005 up to 2013 in graphic design, internet aesthetics, user interfaces, and
+                  other media.
+                </p>
+                <img src="Asset/solinus.jpg" alt="Windows Vista Desktop - Frutiger Aero Website by Solinus" class="wiki-image" />
+                <p>
+                  The name of the aesthetic was created by the Consumer Aesthetics Research Institute, a collective of
+                  researchers and designers that are specialized in categorizing consumer aesthetics from the 1970s
+                  onwards.
+                </p>
+                <p>
+                  The word "Frutiger" comes from the typefaces of the same name designed by Adrian Frutiger
+                  (1928-2015, R.I.P), a Swiss typeface designer responsible for fonts commonly seen in airports,
+                  transportation, and train stations. Those fonts would inspire computer fonts during the 2000s,
+                  notably Segoe UI which was used in Windows Vista onwards. The second part of the aesthetic's name
+                  "Aero" refers to the design guidelines for Windows Vista and Windows 7, which embraced a futuristic,
+                  glossy, and transparent glass look.
+                </p>
+                <p>
+                  Outside of computer operating systems, the aesthetic can be identified in game consoles such as the
+                  PS VITA, the PSP, PS3, Xbox 360 (Blades dashboard), Wii, Wii U, and some others. It can also be seen
+                  in toys such as the iDog from Sega, some architectural projects, like Poste Italiane in 2007,
+                  McDonald's flagship restaurant by SHH, London, Amgen Inc., in South Francisco and O2 Flagship Store
+                  in Munich's Marienplatz to count a few. It can also be seen in phones that incorporated
+                  skeuomorphism, and stock imagery, among other things.
+                </p>
+                <p>
+                  On the web, during the middle 2000s to early 2010s, glossy interfaces that incorporated reflections,
+                  gradient, and skeuomorphism were often seen. At the time, it was called Web 2.0, but some referred
+                  to it as Web 2.0 Gloss.
+                </p>
+              </article>
+
+              <article class="thread-card swatch-slushie clay-card" id="wiki-early">
+                <span class="thread-tag">Early Development (2001-2005)</span>
+                <p>
+                  Design trends come and go, and each decade had its own distinct look and feel. With the birth of
+                  World Wide Web, technology would grow to take a completely different importance in our lives.
+                </p>
+                <p>
+                  At the start of the new millennium, thanks to the progress of technology in the sector of computing,
+                  operating system manufacturers such as Microsoft and Apple could experiment with more innovative
+                  graphical user interfaces that would make using computers easier and more pleasing than ever before.
+                </p>
+                <img src="Asset/windows_xp_luna.jpg" alt="Windows XP Desktop - Luna Theme" class="wiki-image" />
+                <p>
+                  In 2001 Windows XP by Microsoft came to the scene with the Luna theme, which was a more friendly and
+                  playful look in contrast to the previous 9x iterations of Windows with their gray, flat and simple
+                  interfaces, as it featured a vibrant blue accent color on the default theme and used gradients.
+                </p>
+                <p>
+                  It was accompanied by the "Bliss" Wallpaper, originally titled "Bucolic Green Hills", it is a
+                  photograph of a vineyard that was cleared due to a phylloxera infestation taken in 1996 by Charles
+                  O'Rear. The photograph displays rolling hills with a clear blue sky with mountains far in the
+                  background. It almost looks utopian, unreal, or dream-like.
+                </p>
+                <p>
+                  The widespread use of Windows XP with Bliss as the default wallpaper in the years to come probably
+                  contributed to popularizing the use of nature and greenery in tech, advertisements, posters, etc.
+                  that would come in the following years.
+                </p>
+                <p>
+                  More importantly, this operating system showed an effort to appear more friendly and welcoming to the
+                  average user, providing a more comforting environment to discover a new digital world. However, the
+                  interface of Windows XP was not without its critics, who called its Luna design style "Fisher-Price"
+                  looking and toy-like. Still, XP would be Microsoft's longest lasting operating system, only reaching
+                  end of life in 2014.
+                </p>
+                <img src="Asset/mac_os_x_10.jpg" alt="Mac OS X 10.0 Desktop" class="wiki-image" />
+                <p>
+                  A few months before Windows XP in 2001, Apple had released their own new unique interface in
+                  Mac OS X 10.0, introducing the Aqua design style, with elements of the interface mimicking the
+                  effect of water droplets, and a use of reflection effects and translucency. As indicated by its name,
+                  Aqua was based on the theme of water. Its first appearance in a commercial product was in July 2000
+                  with the release of iMovie 2.
+                </p>
+                <p>
+                  A very innovative interface at the time, it would inspire other manufacturers such as Microsoft to
+                  pursue similar-looking interfaces in the future.
+                </p>
+                <p>
+                  Both Apple and Microsoft tried to appeal to the public with pleasing, beautiful interfaces that took
+                  full advantage of newer computer graphic capabilities, often mimicking real life elements.
+                </p>
+                <p>
+                  Unlike the 90s, when interfaces and tech looked more gray and silvery (retrospectively called the
+                  Y2K era), things started to look more colorful. There was genuine optimism and excitement at the time
+                  in the general public about the possibilities offered by technology and its possible benefits on
+                  humanity and it was certainly reflected in the media of the time.
+                </p>
+              </article>
+
+              <article class="thread-card swatch-ube clay-card dashed" id="wiki-aero">
+                <span class="thread-tag">Development of Windows Aero (2005-2009)</span>
+                <img src="Asset/longhorn_build_5048.jpg" alt="Aero desktop of Longhorn 5048" class="wiki-image" />
+                <p>
+                  Microsoft's next operating system, codenamed "Longhorn" was planned to release sometime late in
+                  2003, originally intended to be a minor release between Windows XP (codenamed "Whistler") and a
+                  bigger release codenamed "Blackcomb", Longhorn grew in scope until it became the next major release
+                  of Windows instead.
+                </p>
+                <p>
+                  The ambitions for the project grew constantly, causing numerous delays and a bloated codebase.
+                  The situation became so bad that in the summer of 2004 the project was reset, discarding years of
+                  hard work from engineers. The project would start fresh with the Windows Server 2003 codebase as a
+                  new foundation, which was also used in some 64-bit releases of Windows XP.
+                </p>
+                <img src="Asset/windows_vista.jpg" alt="Aero Desktop of Windows Vista" class="wiki-image" />
+                <p>
+                  Longhorn would eventually be renamed to "Vista" for the final release. An unprecedented beta-test
+                  program ensued involving hundreds of thousands of volunteers and companies. Between September 2005
+                  and October 2006, Microsoft released regular Community Technology Previews (CTP) to beta testers and
+                  two release candidates to the general public.
+                </p>
+                <p>
+                  The post-reset build 5048 of Windows Longhorn would introduce a new visual interface design, called
+                  "AERO", standing for Authentic, Energetic, Reflective, and Open.
+                </p>
+                <p>
+                  While many parts of the user interface remained the same as previous iterations of Windows, it would
+                  incorporate a new glassy look, with reflections, and a more 3D look. Cleartype anti-aliasing was now
+                  enabled across all surfaces by default. Development of Windows Vista concluded with the November 8,
+                  2006 announcement of its completion by co-president of Windows development, Jim Allchin.
+                </p>
+                <p>
+                  When Windows Vista was finally released to the public in 2007, it was seen for many as a
+                  disappointment. Many of the promised features of Longhorn were discarded, and what was left was not
+                  deemed "game-changing" enough for most people to switch from XP. The new Aero interface was very
+                  demanding on the hardware of the time, and many computers that did not meet the minimum requirements
+                  were branded with the "Vista Capable" stickers. This led many customers to return to Windows XP due
+                  to bad performance.
+                </p>
+                <p>
+                  Adding insult to injury, it also had many bugs and driver issues on release, many peripherals and
+                  software that worked fine on XP would break on Vista. The combination of problems and the bad timing
+                  led to the failure of the operating system.
+                </p>
+                <img src="Asset/mojave_experiment.jpg" alt="The Mojave Experiment" class="wiki-image" />
+                <p>
+                  Microsoft would try to do damage control with their advertising campaign called "Mojave Experiment".
+                  It was an effort to change what they felt like was an unfair negative consumer perception of their
+                  operating system. It involved participants that had a negative view of Vista (without having tried
+                  it) being shown a demonstration of a new operating system which they called "Mojave", which
+                  participants thought was awesome. At the end of the experiment, it would be revealed that Mojave was
+                  actually Windows Vista, much to their surprise.
+                </p>
+                <p>
+                  However, it's true that after service packs and some updates, Windows Vista fixed many of the issues
+                  that caused it to be hated and became very usable. However, most people did not know this and Vista's
+                  reputation would not improve despite Microsoft's efforts.
+                </p>
+                <img src="Asset/windows_7.jpg" alt="Aero Desktop of Windows 7" class="wiki-image" />
+                <p>
+                  Redemption for Microsoft came a few years later in 2009, with Windows 7. Contrary to popular belief,
+                  the previous codenames of Blackcomb and/or Vienna refer to an earlier effort intended to succeed
+                  Windows Vista, which was canceled in early 2007 due to time and feature constraints, and was instead
+                  replaced with the Windows 7 project.
+                </p>
+                <p>
+                  In all aspects an improvement over Vista, the new operating system focused on providing a familiar yet
+                  improved experience. While very similar to Windows Vista, Windows 7 brought many enhancements to the
+                  desktop experience, notably the Taskbar receiving a major overhaul. Windows 7 finally surpassed
+                  Windows XP in market share in April 2011.
+                </p>
+              </article>
+
+              <article class="thread-card clay-card" id="wiki-stock">
+                <span class="thread-tag">Stock Imagery and Advertisements</span>
+                <img src="Asset/asadal.jpg" alt="Laptop in a green field" class="wiki-image" />
+                <p>
+                  During the early to late 2000s, HD Television and new display technologies such as Plasma TV were
+                  starting to take off in popularity, and vibrant, abstract photography and videos of nature and the
+                  ocean would often be displayed in stores and advertisements to show the full capabilities of the
+                  displays. Analog TV would also give way to Digital TV, which increased image quality for millions of
+                  people.
+                </p>
+                <p>
+                  Stock imagery featuring utopian environments would also become very popular in the early 2000s up to
+                  the early 2010s, often showing green grassy plains with tall buildings, giant globes of earth. These
+                  are the pictures we often associate with Frutiger Aero. They showed a green and sustainable future
+                  where man, technology, and nature could co-exist in harmony.
+                </p>
+                <p>
+                  The earliest example goes as far back as the year 2000, with the CD-ROM collection made by Orion
+                  Press, called Tomorrow, Blue and Green, and Pure. Corporations used those images profusely, which was
+                  often greenwashing, a deceitful way of advertising their company as eco-champions and more
+                  sustainable than they actually were in reality.
+                </p>
+                <p>
+                  The most famous images are made by Asadal Design, a South Korean stock photography agency, which
+                  produced thousands of such images. Sozaijiten, a Japanese-produced collection of images by Image Navi
+                  Corporation spanning over 246 volumes on various subjects, some of which depicted nature and cities
+                  merging together, reflecting a vision of a more optimistic, eco-friendly vision of the future.
+                </p>
+              </article>
+
+              <article class="thread-card clay-card" id="wiki-games">
+                <span class="thread-tag">Frutiger Aero in Video Games</span>
+                <img src="Asset/wii.jpg" alt="Wii Home Menu" class="wiki-image" />
+                <p>
+                  The seventh generation of video game consoles also started using Frutiger Aero-like designs for their
+                  graphical user interfaces. The Wii, aimed at more casual audiences, introduced motion controls, and a
+                  playful interface using skeuomorphism, all this accompanied by soothing music. PlayStation 3 and
+                  PlayStation Portable also featured beautiful interfaces, with Aurora Borealis backgrounds, like
+                  Windows Vista. The Xbox 360 dashboard is also worth noting.
+                </p>
+                <p>
+                  The PlayStation Vita released in 2011 is also iconic, as it perfectly encapsulates the Frutiger Aero
+                  aesthetic with its heavy use of skeuomorphism and floating bubbles as navigation items on the home
+                  screen. Sadly, the console was a commercial failure, which also led Sony to abandon the handheld
+                  console market.
+                </p>
+                <p>
+                  The Wii U released on November 18, 2012, and was the last game console to feature a glossy and bubbly
+                  interface that we associate with Frutiger Aero. Due to a number of factors, it turned out to be a
+                  commercial failure, only selling 13 million units, almost leading Nintendo to bankruptcy.
+                </p>
+              </article>
+
+              <article class="thread-card clay-card" id="wiki-smartphone">
+                <span class="thread-tag">The Smartphone Revolution (2007)</span>
+                <img src="Asset/iphone.jpg" alt="iPhone (2007)" class="wiki-image" />
+                <p>
+                  In the 2007 MacWorld event Apple took the world by storm by revealing the iPhone, a phone that
+                  combined iPod, Web Browsing, and Phone, into one singular device, using only touch controls.
+                </p>
+                <p>
+                  At the core of this new phone revolution was Skeuomorphism, a design concept of making items
+                  resemble their real-world counterparts, in an attempt to make the UI more intuitive for people not
+                  yet used to smartphone technology.
+                </p>
+                <p>
+                  This would prove to be hugely influential, with other phone manufacturers soon following with their
+                  own touch devices which also included skeuomorphic interfaces, notably Android phones.
+                </p>
+                <p>
+                  The widespread use of smartphones changed the digital landscape forever, notably on the web, with
+                  Flash websites falling out of favor, soon to be replaced by HTML5. In 2010, Microsoft unveiled
+                  Windows Phone, with the first real flat design interface, which would later inspire Windows 8.
+                </p>
+              </article>
+
+              <article class="thread-card clay-card" id="wiki-flat">
+                <span class="thread-tag">Popularization of Flat Design (2012)</span>
+                <img src="Asset/windows_8.jpg" alt="Windows 8 Home Screen" class="wiki-image" />
+                <p>
+                  In 2012, smartphones and tablets were growing in popularity, and companies like Microsoft were
+                  starting to worry about the future of desktop computers. Because of this, Microsoft changed their
+                  operating system philosophy in Windows 8, ditching the Aero design language for Metro, featuring flat
+                  tiles with a minimalist look with a touch-friendly interface, as an effort to merge their phone and
+                  computer ecosystems into one.
+                </p>
+                <p>
+                  There was an option to use the classic desktop, but the start button was absent. Due to backlash,
+                  Microsoft brought it back with Windows 8.1 in August 2013, but its market share never surpassed
+                  Windows 7.
+                </p>
+                <p>
+                  Scott Forstall, who led the original software development team for the iPhone and iPad and was a big
+                  proponent of skeuomorphism, was also fired around that time, with Jony Ive taking over iOS design.
+                  Due to this and because of people being more familiar with technology, iOS 7 which released on
+                  September 18, 2013, stopped using skeuomorphism completely.
+                </p>
+                <img src="Asset/ios_7.jpg" alt="iOS 6 to iOS 7 (2013)" class="wiki-image" />
+                <p>
+                  Due to this series of events, Frutiger Aero-like interfaces lost popularity and were gradually
+                  replaced by simpler flatter versions, and less elaborate designs which are cheaper and easier to
+                  produce.
+                </p>
+              </article>
+
+              <article class="thread-card clay-card" id="wiki-cari">
+                <span class="thread-tag">CARI coins the term "Frutiger Aero" (2017)</span>
+                <img src="Asset/sofi_lee.jpg" alt="Sofi Xian holding a digicam" class="wiki-image" />
+                <p>
+                  In 2017, Sofi Xian (known mononymously as Sofi) from CARI, which stands for "Consumer Aesthetics
+                  Research Institute", coined the term "Frutiger Aero," and defined it as "the corporate tech aesthetic
+                  popular from approximately 2005 through 2013."
+                </p>
+                <p>With prominent motifs being:</p>
+                <ul>
+                  <li>Skeuomorphism in UI/UX design</li>
+                  <li>Glossy design</li>
+                  <li>Frutiger/humanist sans-serif typefaces</li>
+                  <li>Tertiary color palettes</li>
+                  <li>Glassy/transparent materials</li>
+                  <li>Photographs of aurora borealis</li>
+                  <li>Bokeh photography</li>
+                  <li>Macro photographs of grass</li>
+                </ul>
+                <p>
+                  The first part of the name "Frutiger" is derived from the Frutiger typefaces, and the second part
+                  "Aero" is derived from the Windows Aero design interface.
+                </p>
+                <img src="Asset/frutiger_aero_1.jpg" alt="Differences between Frutiger Aero and Y2K" class="wiki-image" />
+                <img src="Asset/frutiger_aero_2.jpg" alt="Frutiger Family and other aesthetics" class="wiki-image" />
+              </article>
+
+              <article class="thread-card clay-card" id="wiki-revival">
+                <span class="thread-tag">Revival on Social Media (2022-Present)</span>
+                <img src="Asset/asadal_monitor.jpg" alt="Fish leaping out of a monitor" class="wiki-image" />
+                <p>
+                  Frutiger Aero gained popularity around 2022 thanks to social media like TikTok, mostly with people
+                  that were kids during the early 2000s, but also younger people that were not around at the time.
+                </p>
+                <p>
+                  New forms of the aesthetic were being made, sometimes mixing other genres like liminal spaces with
+                  Frutiger Aero. This can be seen with the term "The future that they promised us" being used often,
+                  which is a term that is misleading, as such a future was never promised, however, optimism for the
+                  future was present at the time.
+                </p>
+                <p>There are also other sub-aesthetics or sub-genres of Frutiger Aero, such as:</p>
+                <ul>
+                  <li>Frutiger Eco</li>
+                  <li>Frutiger Aurora</li>
+                  <li>Dark Aero</li>
+                  <li>Technozen</li>
+                  <li>Helvetica Aqua Aero</li>
+                </ul>
+                <p>
+                  Also around that time, a subreddit based around the aesthetic was created and communities on various
+                  social media further helped to re-popularize the aesthetic.
+                </p>
+                <p>
+                  It will probably never become mainstream again as a design trend, however nothing prevents you to
+                  create cool artworks, wallpapers, music, and theme your computer to look Frutiger Aero, to celebrate
+                  the good old days, or simply for the love of art.
+                </p>
+              </article>
+
+              <article class="thread-card clay-card" id="wiki-sources">
+                <span class="thread-tag">Main References / Sources</span>
+                <ul>
+                  <li><a href="https://aesthetics.fandom.com/" target="_blank" rel="noopener noreferrer">Aesthetics Wiki</a></li>
+                  <li><a href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia</a></li>
+                  <li><a href="https://betawiki.net/" target="_blank" rel="noopener noreferrer">Betawiki</a></li>
+                  <li><a href="https://web.archive.org/web/20050729003728/http://msdn.microsoft.com/windowsvista/experience/" target="_blank" rel="noopener noreferrer">Definition of Aero - Web Archive</a></li>
+                  <li><a href="https://cari.institute/aesthetics/frutiger-aero" target="_blank" rel="noopener noreferrer">Consumer Aesthetics Research Institute</a></li>
+                  <li><a href="https://vapor95.com/blogs/darknet/frutiger-aero-a-nostalgic-journey-through-the-rise-reign-and-resurgence-of-a-unique-design-aesthetic" target="_blank" rel="noopener noreferrer">A Journey Through the Rise, Reign, and Resurgence of a Unique Design Aesthetic - Vapor95</a></li>
+                  <li><a href="https://longhorn.ms/" target="_blank" rel="noopener noreferrer">Longhorn History</a></li>
+                  <li><a href="https://setapp.com/how-to/full-list-of-all-macos-versions#cheetah" target="_blank" rel="noopener noreferrer">All macOS versions from 2001 to 2024 - Setapp</a></li>
+                  <li><a href="https://www.theverge.com/2013/6/10/4407630/apple-announces-ios-7" target="_blank" rel="noopener noreferrer">Apple announces iOS 7 - TheVerge</a></li>
+                  <li><a href="https://www.stardock.com/products/wb6/index.asp" target="_blank" rel="noopener noreferrer">Stardock.com - Old page with Frutiger Aero interface</a></li>
+                  <li><a href="https://luxurylaunches.com/celebrities/04-15-2024-steve-jobs-inspiration-from-private-jet.php" target="_blank" rel="noopener noreferrer">Steve Jobs and Skeuomorphism - Luxurylaunches</a></li>
+                  <li><a href="https://www.youtube.com/watch?v=4GcXZSpWnZc" target="_blank" rel="noopener noreferrer">Jenny Lam Interview (YouTube link)</a></li>
+                  <li><a href="https://www.youtube.com/watch?v=k_T75kgWLkI" target="_blank" rel="noopener noreferrer">Frutiger Aero Aesthetic Analysis by Aesthety (YouTube link)</a></li>
+                  <li><a href="https://web.archive.org/web/20091008081626/http://www.pcworld.com/article/117427/full_disclosure_your_take_on_windows_worst_irritations.html" target="_blank" rel="noopener noreferrer">Full Disclosure: Your Take on Windows' Worst Irritations | PCWorld (Archive)</a></li>
+                </ul>
+              </article>
+            </section>
+          </div>
+        </main>
+
+        <section class="xp-window utility-window is-hidden" data-app="media" aria-label="Media Player window">
+          <header class="titlebar" data-drag-handle="true">
+            <div class="title-left">
+              <span class="title-dot" aria-hidden="true"></span>
+              <strong>Windows Media Player</strong>
+            </div>
+            <div class="window-controls">
+              <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
+              <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
+              <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
+            </div>
+          </header>
+          <div class="window-toolbar" id="wmp-menubar">
+            <button type="button" data-wmp-menu="file">File</button>
+            <button type="button" data-wmp-menu="view">View</button>
+            <button type="button" data-wmp-menu="play">Play</button>
+            <button type="button" data-wmp-menu="tools">Tools</button>
+            <button type="button" data-wmp-menu="help">Help</button>
+          </div>
+          <div class="utility-content media-player-panel">
+            <div class="wmp9-shell" id="wmp-shell" data-wmp-skin="default">
+              <aside class="wmp9-nav" aria-label="Player sections">
+                <button type="button" class="wmp9-nav-btn active" data-wmp-view="now-playing">Now Playing</button>
+                <button type="button" class="wmp9-nav-btn" data-wmp-view="media-guide">Media Guide</button>
+                <button type="button" class="wmp9-nav-btn" data-wmp-view="cd-audio">CD Audio</button>
+                <button type="button" class="wmp9-nav-btn" data-wmp-view="media-library">Media Library</button>
+                <button type="button" class="wmp9-nav-btn" data-wmp-view="radio-tuner">Radio Tuner</button>
+                <button type="button" class="wmp9-nav-btn" data-wmp-view="portable-device">Portable Device</button>
+                <button type="button" class="wmp9-nav-btn" data-wmp-view="skin-chooser">Skin Chooser</button>
+              </aside>
+
+              <section class="wmp9-main">
+                <div class="wmp9-display">
+                  <article class="wmp9-now-playing">
+                    <p class="wmp9-meta-line" id="wmp-meta-line">Written by Beck Hansen Published by Cya...</p>
+                    <h3 id="wmp-title" class="wmp-title">Beautiful Way</h3>
+                    <img id="wmp-cover" src="Asset/windows_vista.jpg" alt="Album cover" class="wmp-cover" />
+                    <p id="wmp-album" class="wmp-album">Ambience: Water</p>
+                  </article>
+
+                  <aside class="wmp9-playlist-panel" aria-label="Playlist panel">
+                    <header class="wmp9-playlist-head">Sample Playlist</header>
+                    <ul class="wmp-tracklist" aria-label="Playlist">
+                      <li class="playlist-item" data-track="song/music-01.mp3" data-title="Aero Morning" data-album="Frutiger Sessions" data-cover="song/song1pic.png">
+                        <span>frutiger aero</span><small>2:13</small>
+                      </li>
+                      <li class="playlist-item" data-track="song/music-02.mp3" data-title="Glass Horizon" data-album="Vista Nights" data-cover="song/song2pic.jpg">
+                        <span>frutiger dillon - Windows98</span><small>7:33</small>
+                      </li>
+                      <li class="playlist-item" data-track="song/music-03.mp3" data-title="Blue Future" data-album="Luna Dreams" data-cover="song/song3pic.jpg">
+                        <span>Robert Miles - Children</span><small>2:44</small>
+                      </li>
+                    </ul>
+                  </aside>
+                </div>
+
+                <p class="wmp9-status-line" id="wmp-status-line">Playing: 128 K bits/second</p>
+                <div class="wmp-view-content" id="wmp-view-content" hidden></div>
+
+                <div class="wmp9-controls" aria-label="Playback controls">
+                  <button type="button" id="wmp-play" class="wmp-btn play" aria-label="Play or pause">&#9658;</button>
+                  <button type="button" id="wmp-prev" class="wmp-btn" aria-label="Previous track">&#9198;</button>
+                  <button type="button" id="wmp-next" class="wmp-btn" aria-label="Next track">&#9197;</button>
+                  <div class="wmp-progress-wrap">
+                    <div class="wmp-progress" id="wmp-progress" role="slider" aria-label="Track progress" tabindex="0">
+                      <span id="wmp-progress-fill"></span>
+                    </div>
+                    <p class="wmp-time">
+                      <span id="wmp-current-time">0:00</span>
+                      <span id="wmp-duration">0:00</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <audio id="media-audio" preload="none"></audio>
+            </div>
+          </div>
+        </section>
+
+        <section class="xp-window utility-window is-hidden" data-app="widgets" aria-label="Widgets window">
+          <header class="titlebar" data-drag-handle="true">
+            <div class="title-left">
+              <span class="title-dot" aria-hidden="true"></span>
+              <strong>Desktop Widgets</strong>
+            </div>
+            <div class="window-controls">
+              <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
+              <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
+              <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
+            </div>
+          </header>
+          <div class="window-toolbar">
+            <button type="button">Gadgets</button>
+            <button type="button">Themes</button>
+            <button type="button">Options</button>
+          </div>
+          <div class="utility-content widget-gallery-wrap">
+            <div class="widget-gallery-head">
+              <strong>Gadget Gallery</strong>
+              <label class="widget-search">
+                <span>Search</span>
+                <input type="search" id="gadget-search" placeholder="Search all gadgets" aria-label="Search all gadgets" />
+              </label>
+            </div>
+            <div class="widget-grid" id="gadget-gallery">
+              <article class="widget-card gadget-tile" data-gadget-tile="clock">
+                <div class="gadget-icon gadget-icon-clock"></div>
+                <h3>Clock</h3>
+                <button type="button" class="gadget-toggle-btn" data-gadget-toggle="clock">Toggle</button>
+              </article>
+              <article class="widget-card gadget-tile" data-gadget-tile="weather">
+                <div class="gadget-icon gadget-icon-weather"></div>
+                <h3>Weather</h3>
+                <button type="button" class="gadget-toggle-btn" data-gadget-toggle="weather">Toggle</button>
+              </article>
+              <article class="widget-card gadget-tile" data-gadget-tile="cpu">
+                <div class="gadget-icon gadget-icon-meter"></div>
+                <h3>CPU Meter</h3>
+                <button type="button" class="gadget-toggle-btn" data-gadget-toggle="cpu">Toggle</button>
+              </article>
+              <article class="widget-card gadget-tile" data-gadget-tile="note">
+                <div class="gadget-icon gadget-icon-note"></div>
+                <h3>Notes</h3>
+                <button type="button" class="gadget-toggle-btn" data-gadget-toggle="note">Toggle</button>
+              </article>
+              <article class="widget-card gadget-tile" data-gadget-tile="photo">
+                <div class="gadget-icon gadget-icon-photo"></div>
+                <h3>Photo Frame</h3>
+                <button type="button" class="gadget-toggle-btn" data-gadget-toggle="photo">Toggle</button>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="xp-window utility-window is-hidden" data-app="portfolio" aria-label="Portfolio window">
+          <header class="titlebar" data-drag-handle="true">
+            <div class="title-left">
+              <span class="title-dot" aria-hidden="true"></span>
+              <strong>WorkJap Portfolio</strong>
+            </div>
+            <div class="window-controls">
+              <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
+              <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
+              <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
+            </div>
+          </header>
+          <div class="window-toolbar">
+            <button type="button">Profile</button>
+            <button type="button">Projects</button>
+            <button type="button">Tools</button>
+          </div>
+          <div class="utility-content portfolio-panel">
+            <div class="portfolio-header-card">
+              <img src="Asset/49137b0a-f3f1-4aa5-9143-ed003eb04b3d (1).png" alt="Profile picture of WorkJap" class="portfolio-avatar" />
+              <div>
+                <h2>WorkJap</h2>
+                <p class="portfolio-role">Creative Portfolio Introduction</p>
+                <p class="portfolio-intro">Hi, I am WorkJap. I love Y2K-inspired design and Windows XP style interfaces. I am building a desktop nostalgia website that feels functional, expressive, and full of personality.</p>
+              </div>
+            </div>
+
+            <div class="portfolio-grid">
+              <section class="portfolio-card">
+                <h3>About Me</h3>
+                <p>I focus on retro-feel UI, subtle motion, and clear user experience across both desktop and mobile.</p>
+              </section>
+              <section class="portfolio-card">
+                <h3>Focus</h3>
+                <ul>
+                  <li>XP / WMP style web interface</li>
+                  <li>Portfolio + Personal branding</li>
+                  <li>Interactive widgets and media</li>
+                </ul>
+              </section>
+            </div>
+
+            <section class="portfolio-card portfolio-music-card">
+              <h3 id="wobble">Mood Song</h3>
+              <p>Intro track for WorkJap (starts at 5:42)</p>
+              <div class="portfolio-video-wrap">
+                <a class="portfolio-video-link" href="https://www.youtube.com/watch?v=pr6t6AJ6lho&t=342s" target="_blank" rel="noopener noreferrer" aria-label="Open Mood Song on YouTube">
+                  <img src="https://i.ytimg.com/vi/pr6t6AJ6lho/hqdefault.jpg" alt="Mood Song thumbnail" loading="lazy" />
+                  <span>Watch on YouTube</span>
+                </a>
+              </div>
+              <a href="https://www.youtube.com/watch?v=pr6t6AJ6lho&t=342s" target="_blank" rel="noopener noreferrer">Open on YouTube</a>
+            </section>
+          </div>
+        </section>
+
+        <section class="xp-window utility-window is-hidden" data-app="topics" aria-label="Topics window">
+          <header class="titlebar" data-drag-handle="true">
+            <div class="title-left">
+              <span class="title-dot" aria-hidden="true"></span>
+              <strong>Topic Manager</strong>
+            </div>
+            <div class="window-controls">
+              <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
+              <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
+              <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
+            </div>
+          </header>
+          <div class="window-toolbar">
+            <button type="button">Sort</button>
+            <button type="button">Filter</button>
+            <button type="button">Export</button>
+          </div>
+          <div class="utility-content swatch-matcha gif-gallery">
+            <p><strong>Early Webs Asset Collection (52 GIFs)</strong></p>
+            <div class="gif-gallery-grid">
+              <div class="gif-item"><a href="Asset/Early Webs Asset/2025-06-18-Aquarium.gif" target="_blank"><img src="Asset/Early Webs Asset/2025-06-18-Aquarium.gif" alt="2025-06-18-Aquarium.gif"><span class="gif-name">2025-06-18-Aquarium.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/2025-06-18-i-love-u-all.gif" target="_blank"><img src="Asset/Early Webs Asset/2025-06-18-i-love-u-all.gif" alt="2025-06-18-i-love-u-all.gif"><span class="gif-name">2025-06-18-i-love-u-all.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/3demail21.gif" target="_blank"><img src="Asset/Early Webs Asset/3demail21.gif" alt="3demail21.gif"><span class="gif-name">3demail21.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/aol-america.gif" target="_blank"><img src="Asset/Early Webs Asset/aol-america.gif" alt="aol-america.gif"><span class="gif-name">aol-america.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/call-calling.gif" target="_blank"><img src="Asset/Early Webs Asset/call-calling.gif" alt="call-calling.gif"><span class="gif-name">call-calling.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/cyberpunk-cyber.gif" target="_blank"><img src="Asset/Early Webs Asset/cyberpunk-cyber.gif" alt="cyberpunk-cyber.gif"><span class="gif-name">cyberpunk-cyber.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/earth-internetcore.gif" target="_blank"><img src="Asset/Early Webs Asset/earth-internetcore.gif" alt="earth-internetcore.gif"><span class="gif-name">earth-internetcore.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/gabriel10sr-gabriel10sr-surfando-na-net.gif" target="_blank"><img src="Asset/Early Webs Asset/gabriel10sr-gabriel10sr-surfando-na-net.gif" alt="gabriel10sr"><span class="gif-name">gabriel10sr-surfando.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/ia-cat.gif" target="_blank"><img src="Asset/Early Webs Asset/ia-cat.gif" alt="ia-cat.gif"><span class="gif-name">ia-cat.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/ia-clublogo.gif" target="_blank"><img src="Asset/Early Webs Asset/ia-clublogo.gif" alt="ia-clublogo.gif"><span class="gif-name">ia-clublogo.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/ia-columbine.gif" target="_blank"><img src="Asset/Early Webs Asset/ia-columbine.gif" alt="ia-columbine.gif"><span class="gif-name">ia-columbine.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/ia-jesushands.gif" target="_blank"><img src="Asset/Early Webs Asset/ia-jesushands.gif" alt="ia-jesushands.gif"><span class="gif-name">ia-jesushands.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/ia-party-food.gif" target="_blank"><img src="Asset/Early Webs Asset/ia-party-food.gif" alt="ia-party-food.gif"><span class="gif-name">ia-party-food.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/ia-tallbike.gif" target="_blank"><img src="Asset/Early Webs Asset/ia-tallbike.gif" alt="ia-tallbike.gif"><span class="gif-name">ia-tallbike.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/ia-the-awesome-kitty-club.gif" target="_blank"><img src="Asset/Early Webs Asset/ia-the-awesome-kitty-club.gif" alt="ia-the-awesome-kitty-club.gif"><span class="gif-name">ia-awesome-kitty.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/ia-unicorn-friendship-award-1998.gif" target="_blank"><img src="Asset/Early Webs Asset/ia-unicorn-friendship-award-1998.gif" alt="ia-unicorn-friendship-award-1998.gif"><span class="gif-name">ia-unicorn-friendship.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/ia-wizard.gif" target="_blank"><img src="Asset/Early Webs Asset/ia-wizard.gif" alt="ia-wizard.gif"><span class="gif-name">ia-wizard.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/internet-webcore.gif" target="_blank"><img src="Asset/Early Webs Asset/internet-webcore.gif" alt="internet-webcore.gif"><span class="gif-name">internet-webcore.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/love-bug-babicinel.gif" target="_blank"><img src="Asset/Early Webs Asset/love-bug-babicinel.gif" alt="love-bug-babicinel.gif"><span class="gif-name">love-bug-babicinel.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/new1.gif" target="_blank"><img src="Asset/Early Webs Asset/new1.gif" alt="new1.gif"><span class="gif-name">new1.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/new2.gif" target="_blank"><img src="Asset/Early Webs Asset/new2.gif" alt="new2.gif"><span class="gif-name">new2.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/nyan-cat-scene.gif" target="_blank"><img src="Asset/Early Webs Asset/nyan-cat-scene.gif" alt="nyan-cat-scene.gif"><span class="gif-name">nyan-cat-scene.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/old-web-early-2000s-web (1).gif" target="_blank"><img src="Asset/Early Webs Asset/old-web-early-2000s-web (1).gif" alt="old-web-early-2000s-web (1).gif"><span class="gif-name">old-web-early-2000s-1.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/old-web-early-2000s-web.gif" target="_blank"><img src="Asset/Early Webs Asset/old-web-early-2000s-web.gif" alt="old-web-early-2000s-web.gif"><span class="gif-name">old-web-early-2000s.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/police.gif" target="_blank"><img src="Asset/Early Webs Asset/police.gif" alt="police.gif"><span class="gif-name">police.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/radio-disco-polo.gif" target="_blank"><img src="Asset/Early Webs Asset/radio-disco-polo.gif" alt="radio-disco-polo.gif"><span class="gif-name">radio-disco-polo.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/retro-vintage.gif" target="_blank"><img src="Asset/Early Webs Asset/retro-vintage.gif" alt="retro-vintage.gif"><span class="gif-name">retro-vintage.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/shark-web.gif" target="_blank"><img src="Asset/Early Webs Asset/shark-web.gif" alt="shark-web.gif"><span class="gif-name">shark-web.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/skull-rotate.gif" target="_blank"><img src="Asset/Early Webs Asset/skull-rotate.gif" alt="skull-rotate.gif"><span class="gif-name">skull-rotate.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/smiling.gif" target="_blank"><img src="Asset/Early Webs Asset/smiling.gif" alt="smiling.gif"><span class="gif-name">smiling.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/surf-dogecoin.gif" target="_blank"><img src="Asset/Early Webs Asset/surf-dogecoin.gif" alt="surf-dogecoin.gif"><span class="gif-name">surf-dogecoin.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_14a71df179d76374012a1cc3bd071bf6_dbb12975_500.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_14a71df179d76374012a1cc3bd071bf6_dbb12975_500.gif" alt="tumblr_14a71df179d76374012a1cc3bd071bf6_dbb12975_500.gif"><span class="gif-name">tumblr_14a71df179d7.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_1bca5def30ce84df872c9f5b9d4202a2_bf0aa562_400.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_1bca5def30ce84df872c9f5b9d4202a2_bf0aa562_400.gif" alt="tumblr_1bca5def30ce84df872c9f5b9d4202a2_bf0aa562_400.gif"><span class="gif-name">tumblr_1bca5def30ce.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_59ba2ac203f24e2a19df43141abf7de3_2f6fea93_250.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_59ba2ac203f24e2a19df43141abf7de3_2f6fea93_250.gif" alt="tumblr_59ba2ac203f24e2a19df43141abf7de3_2f6fea93_250.gif"><span class="gif-name">tumblr_59ba2ac203f2.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_a34c7b8de10db29374b57725216651c9_369a98fd_250.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_a34c7b8de10db29374b57725216651c9_369a98fd_250.gif" alt="tumblr_a34c7b8de10db29374b57725216651c9_369a98fd_250.gif"><span class="gif-name">tumblr_a34c7b8de10db.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_bc9b0a5d6a7090e1e9d8b22d76df6cc3_a1d6e835_75.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_bc9b0a5d6a7090e1e9d8b22d76df6cc3_a1d6e835_75.gif" alt="tumblr_bc9b0a5d6a7090e1e9d8b22d76df6cc3_a1d6e835_75.gif"><span class="gif-name">tumblr_bc9b0a5d6a.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_c902d7ea2306a2c363b9facff0e0cabd_9e0e54d3_400.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_c902d7ea2306a2c363b9facff0e0cabd_9e0e54d3_400.gif" alt="tumblr_c902d7ea2306a2c363b9facff0e0cabd_9e0e54d3_400.gif"><span class="gif-name">tumblr_c902d7ea230.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_f68c57f34b3226d31faf62ac20dd9453_5a4d7e8d_250.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_f68c57f34b3226d31faf62ac20dd9453_5a4d7e8d_250.gif" alt="tumblr_f68c57f34b3226d31faf62ac20dd9453_5a4d7e8d_250.gif"><span class="gif-name">tumblr_f68c57f34b3.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_lp2sjbZ5jd1qksvu3o1_r2_1280.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_lp2sjbZ5jd1qksvu3o1_r2_1280.gif" alt="tumblr_lp2sjbZ5jd1qksvu3o1_r2_1280.gif"><span class="gif-name">tumblr_lp2sjbZ5jd1.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_lvtduxabtg1qksvu3o1_400.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_lvtduxabtg1qksvu3o1_400.gif" alt="tumblr_lvtduxabtg1qksvu3o1_400.gif"><span class="gif-name">tumblr_lvtduxabtg1q.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_lvtduxabtg1qksvu3o1_4000.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_lvtduxabtg1qksvu3o1_4000.gif" alt="tumblr_lvtduxabtg1qksvu3o1_4000.gif"><span class="gif-name">tumblr_lvtduxabtg1q2.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_lvzd1hEru71qksvu3o1_1280.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_lvzd1hEru71qksvu3o1_1280.gif" alt="tumblr_lvzd1hEru71qksvu3o1_1280.gif"><span class="gif-name">tumblr_lvzd1hEru71q.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_mfv2a2fYzg1qksvu3o1_400.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_mfv2a2fYzg1qksvu3o1_400.gif" alt="tumblr_mfv2a2fYzg1qksvu3o1_400.gif"><span class="gif-name">tumblr_mfv2a2fYzg1q.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_mkpd0m9Q8d1qksvu3o1_250.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_mkpd0m9Q8d1qksvu3o1_250.gif" alt="tumblr_mkpd0m9Q8d1qksvu3o1_250.gif"><span class="gif-name">tumblr_mkpd0m9Q8d1q.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_mprf6lZopS1qksvu3o1_400.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_mprf6lZopS1qksvu3o1_400.gif" alt="tumblr_mprf6lZopS1qksvu3o1_400.gif"><span class="gif-name">tumblr_mprf6lZopS1q.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_nu1521qKe91ud945wo1_100.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_nu1521qKe91ud945wo1_100.gif" alt="tumblr_nu1521qKe91ud945wo1_100.gif"><span class="gif-name">tumblr_nu1521qKe91ud.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_odwtspkf5k1uwg043o1_250.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_odwtspkf5k1uwg043o1_250.gif" alt="tumblr_odwtspkf5k1uwg043o1_250.gif"><span class="gif-name">tumblr_odwtspkf5k1u.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_ohdmbg0fpu1uwg043o1_250.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_ohdmbg0fpu1uwg043o1_250.gif" alt="tumblr_ohdmbg0fpu1uwg043o1_250.gif"><span class="gif-name">tumblr_ohdmbg0fpu1u.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_oqoahxaBB61uwg043o1_100.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_oqoahxaBB61uwg043o1_100.gif" alt="tumblr_oqoahxaBB61uwg043o1_100.gif"><span class="gif-name">tumblr_oqoahxaBB61u.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_or4r9orODf1uwg043o1_250.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_or4r9orODf1uwg043o1_250.gif" alt="tumblr_or4r9orODf1uwg043o1_250.gif"><span class="gif-name">tumblr_or4r9orODf1u.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/tumblr_pwvpasfN811y8g6ddo1_75sq.gif" target="_blank"><img src="Asset/Early Webs Asset/tumblr_pwvpasfN811y8g6ddo1_75sq.gif" alt="tumblr_pwvpasfN811y8g6ddo1_75sq.gif"><span class="gif-name">tumblr_pwvpasfN811y8g.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/uc3.gif" target="_blank"><img src="Asset/Early Webs Asset/uc3.gif" alt="uc3.gif"><span class="gif-name">uc3.gif</span></a></div>
+              <div class="gif-item"><a href="Asset/Early Webs Asset/urmom.gif" target="_blank"><img src="Asset/Early Webs Asset/urmom.gif" alt="urmom.gif"><span class="gif-name">urmom.gif</span></a></div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <nav class="taskbar" aria-label="Windows taskbar">
+        <button class="start-btn" id="start-btn" type="button" aria-expanded="false">
+          <span class="start-orb" aria-hidden="true"></span>
+          start
+        </button>
+
+        <div class="task-buttons" id="task-buttons" aria-label="Running apps">
+          <button type="button" class="task-btn active" data-task-app="forum">Forum Explorer</button>
+        </div>
+
+        <div class="tray">
+          <span class="tray-icon" aria-hidden="true"></span>
+          <time id="clock">--:--</time>
+        </div>
+      </nav>
+
+      <section class="start-menu" id="start-menu" aria-hidden="true">
+        <header>
+          <strong>Administrator</strong>
+          <span>Windows XP Style</span>
+        </header>
+        <ul>
+          <li data-open-app="msn">MSN Messenger Live</li>
+          <li data-open-app="forum">History Wiki</li>
+          <li data-open-app="media">Media Player</li>
+          <li data-open-app="portfolio">Portfolio</li>
+          <li data-open-app="widgets">Widgets</li>
+          <li>Control Panel</li>
+          <li>Run...</li>
+        </ul>
+      </section>
     </div>
 
-    <!-- LOGIN FORM -->
-    <div id="login-panel" class="auth-panel active">
-      <p class="auth-subtitle">Sign in to start</p>
-      <div class="form-row">
-        <label>E-mail address:</label>
-        <input id="login-email" type="email" autocomplete="email" placeholder="yourname@example.com" />
-      </div>
-      <div class="form-row">
-        <label>Password:</label>
-        <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" />
-      </div>
-      <div class="form-actions">
-        <button id="login-btn" class="msn-btn primary">Sign In</button>
-        <button id="goto-register" class="msn-btn">Create Account</button>
-      </div>
-      <p id="login-error" class="auth-error"></p>
-    </div>
+    <script type="text/javascript">
+      // <![CDATA[
+      var speed = 100;
+      var height = 3;
+      var alink = "https://www.youtube.com/watch?v=pr6t6AJ6lho&t=342s";
 
-    <!-- REGISTER FORM -->
-    <div id="register-panel" class="auth-panel">
-      <p class="auth-subtitle">Create a new account</p>
-      <div class="form-row">
-        <label>Username:</label>
-        <input id="reg-username" type="text" placeholder="a-z, 0-9, _ (3-30 chars)" />
-      </div>
-      <div class="form-row">
-        <label>Display Name:</label>
-        <input id="reg-display" type="text" placeholder="Your name on MSN" />
-      </div>
-      <div class="form-row">
-        <label>E-mail:</label>
-        <input id="reg-email" type="email" placeholder="yourname@example.com" />
-      </div>
-      <div class="form-row">
-        <label>Password:</label>
-        <input id="reg-password" type="password" placeholder="Min 8 characters" />
-      </div>
-      <div class="form-actions">
-        <button id="register-btn" class="msn-btn primary">Create Account</button>
-        <button id="goto-login" class="msn-btn">Back to Sign In</button>
-      </div>
-      <p id="register-error" class="auth-error"></p>
-    </div>
-  </div>
-</div>
+      var wobtxt, wobble, wobcnt = 0;
 
-<!-- ═══════════════════════════════════════════
-     MAIN APP
-═══════════════════════════════════════════ -->
-<div id="app" class="app hidden">
+      window.addEventListener("load", function () {
+        if (!document.getElementById) {
+          return;
+        }
 
-  <!-- ── BUDDY LIST WINDOW ─────────────────────────────── -->
-  <div id="buddy-window" class="msn-window buddy-window">
-    <div class="msn-titlebar">
-      <span class="win-title">MSN Messenger</span>
-      <div class="win-controls">
-        <button class="win-btn min" title="Minimize">_</button>
-        <button class="win-btn close" id="app-logout" title="Sign out">×</button>
-      </div>
-    </div>
+        var i, wobli;
+        wobble = document.getElementById("wobble");
+        if (!wobble || !wobble.firstChild) {
+          return;
+        }
 
-    <!-- My profile bar -->
-    <div class="my-profile-bar">
-      <div class="avatar-wrapper" id="my-avatar-wrap">
-        <img id="my-avatar" src="img/default-avatar.png" alt="avatar" class="avatar-img" />
-        <label class="avatar-upload-btn" title="Change avatar">
-          <input type="file" id="avatar-input" accept="image/*" class="hidden" />
-          📷
-        </label>
-      </div>
-      <div class="my-info">
-        <div class="my-name" id="my-display-name" contenteditable="true" spellcheck="false">Loading...</div>
-        <div class="my-status-msg" id="my-status-msg" contenteditable="true" spellcheck="false">What's your personal message?</div>
-      </div>
-      <div class="my-status-selector">
-        <select id="status-select">
-          <option value="online">🟢 Online</option>
-          <option value="away">🌙 Away</option>
-          <option value="busy">🔴 Busy</option>
-          <option value="be right back">⏳ Be Right Back</option>
-          <option value="appear offline">⚫ Appear Offline</option>
-        </select>
-      </div>
-    </div>
+        wobtxt = wobble.firstChild.nodeValue;
+        while (wobble.childNodes.length) {
+          wobble.removeChild(wobble.childNodes[0]);
+        }
 
-    <!-- My MSN ID display -->
-    <div class="id-bar">
-      <span>My MSN ID: </span>
-      <strong id="my-msn-id">----------</strong>
-      <button class="copy-id-btn" id="copy-id-btn" title="Copy ID">📋</button>
-      <button class="copy-id-btn" id="settings-toggle-btn" title="Settings">⚙</button>
-    </div>
+        for (i = 0; i < wobtxt.length; i++) {
+          wobli = document.createElement("span");
+          wobli.setAttribute("id", "wobb" + i);
+          wobli.style.position = "relative";
+          wobli.appendChild(document.createTextNode(wobtxt.charAt(i)));
 
-    <!-- Add friend bar -->
-    <div class="add-friend-bar">
-      <input id="add-contact-input" type="text" maxlength="10" placeholder="Enter 10-digit MSN ID to add..." />
-      <button id="add-contact-btn" class="msn-btn small">Add</button>
-    </div>
+          if (alink) {
+            wobli.style.cursor = "pointer";
+            wobli.onclick = function () {
+              window.location.href = alink;
+            };
+          }
 
-    <div id="settings-panel" class="settings-panel hidden">
-      <div class="settings-grid">
-        <label>
-          <span>Theme</span>
-          <select id="theme-select">
-            <option value="classic">Classic Blue</option>
-            <option value="olive">Olive XP</option>
-            <option value="silver">Silver Frost</option>
-          </select>
-        </label>
-        <label>
-          <span>Privacy</span>
-          <select id="privacy-select">
-            <option value="everyone">Everyone</option>
-            <option value="contacts-only">Contacts Only</option>
-          </select>
-        </label>
-      </div>
-      <label class="settings-check"><input id="sounds-toggle" type="checkbox" /> Enable notification sounds</label>
-      <label class="settings-check"><input id="friend-requests-toggle" type="checkbox" /> Allow friend requests</label>
-      <label class="settings-check"><input id="file-transfer-toggle" type="checkbox" /> Allow file transfer</label>
-    </div>
+          wobble.appendChild(wobli);
+        }
 
-    <div class="group-bar">
-      <button id="toggle-group-composer" class="msn-btn small">New Group</button>
-      <span class="group-bar-text">Create shared chats with your contacts</span>
-    </div>
+        setInterval(wobbler, speed);
+      });
 
-    <div id="group-composer" class="group-composer hidden">
-      <input id="group-title-input" type="text" maxlength="50" placeholder="Group name..." />
-      <div id="group-member-list" class="group-member-list"></div>
-      <div class="group-actions">
-        <button id="create-group-btn" class="msn-btn primary small">Create Group</button>
-        <button id="cancel-group-btn" class="msn-btn small">Cancel</button>
-      </div>
-    </div>
-
-    <!-- Pending friend requests -->
-    <div id="requests-section" class="requests-section hidden">
-      <div class="section-header pending-header">⚡ Pending Requests</div>
-      <div id="requests-list"></div>
-    </div>
-
-    <!-- Contacts list -->
-    <div class="contacts-area">
-      <div class="section-header groups-header">Groups</div>
-      <div id="groups-list" class="contact-group"></div>
-      <div class="section-header online-header">Online</div>
-      <div id="online-list" class="contact-group"></div>
-      <div class="section-header offline-header">Offline</div>
-      <div id="offline-list" class="contact-group"></div>
-    </div>
-
-    <!-- Notifications popup -->
-    <div id="notification-toast" class="notification-toast hidden"></div>
-  </div>
-
-  <!-- ── CHAT WINDOWS CONTAINER ──────────────────────────── -->
-  <div id="chat-windows"></div>
-
-</div>
-
-<!-- ── CHAT WINDOW TEMPLATE ────────────────────────────── -->
-<template id="chat-window-tpl">
-  <div class="msn-window chat-window" data-conv-user="">
-    <div class="msn-titlebar chat-titlebar">
-      <span class="chat-partner-name win-title"></span>
-      <div class="win-controls">
-        <button class="win-btn close chat-close">×</button>
-      </div>
-    </div>
-    <div class="chat-header-bar">
-      <img class="chat-partner-avatar avatar-img" src="img/default-avatar.png" alt="" />
-      <div>
-        <div class="chat-partner-display"></div>
-        <div class="chat-partner-status text-muted"></div>
-      </div>
-      <div class="chat-header-actions">
-        <button class="chat-mini-btn call-voice-btn" title="Voice call">📞</button>
-        <button class="chat-mini-btn call-video-btn" title="Video call">🎥</button>
-        <button class="chat-mini-btn group-rename-btn hidden" title="Rename group">✏</button>
-        <button class="chat-mini-btn group-invite-btn hidden" title="Invite members">➕</button>
-        <button class="chat-mini-btn group-members-btn hidden" title="Manage members">👥</button>
-        <button class="chat-mini-btn group-leave-btn hidden" title="Leave group">↩</button>
-      </div>
-    </div>
-    <div class="call-strip hidden">
-      <span class="call-status">Call inactive</span>
-      <button class="msn-btn small end-call-btn">End Call</button>
-    </div>
-    <div class="media-stage hidden">
-      <video class="remote-video" autoplay playsinline></video>
-      <video class="local-video" autoplay muted playsinline></video>
-    </div>
-    <div class="chat-messages"></div>
-    <div class="typing-indicator hidden"><em class="typing-text"></em></div>
-    <div class="chat-toolbar">
-      <button class="chat-tool-btn attach-btn" title="Send file">📎</button>
-      <button class="chat-tool-btn nudge-btn" title="Nudge">💥</button>
-      <button class="chat-tool-btn wink-btn" title="Wink">😜</button>
-      <input type="file" class="hidden file-input" />
-    </div>
-    <div class="chat-input-row">
-      <textarea class="chat-input" placeholder="Type a message..." rows="3"></textarea>
-      <button class="msn-btn primary send-btn">Send</button>
-    </div>
-  </div>
-</template>
-
-<script src="/socket.io/socket.io.js"></script>
-<script src="js/app.js"></script>
-</body>
+      function wobbler() {
+        for (var i = 0; i < wobtxt.length; i++) {
+          document.getElementById("wobb" + i).style.top = Math.round(height * Math.sin(i + wobcnt)) + "px";
+        }
+        wobcnt++;
+      }
+      // ]]>
+    </script>
+    <script src="js/script.js"></script>
+  </body>
 </html>

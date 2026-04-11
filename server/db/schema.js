@@ -69,6 +69,8 @@ const SHARED_SCHEMA = {
         attachment_name TEXT    NOT NULL DEFAULT '',
         attachment_type TEXT    NOT NULL DEFAULT '',
         attachment_size INTEGER NOT NULL DEFAULT 0,
+        attachment_key  TEXT    NOT NULL DEFAULT '',
+        attachment_url  TEXT    NOT NULL DEFAULT '',
         attachment_data TEXT    NOT NULL DEFAULT '',
         sent_at         INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER,
         is_read         INTEGER NOT NULL DEFAULT 0
@@ -92,6 +94,8 @@ const SHARED_SCHEMA = {
       "ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_name TEXT NOT NULL DEFAULT ''",
       "ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_type TEXT NOT NULL DEFAULT ''",
       'ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_size INTEGER NOT NULL DEFAULT 0',
+      "ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_key TEXT NOT NULL DEFAULT ''",
+      "ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_url TEXT NOT NULL DEFAULT ''",
       "ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_data TEXT NOT NULL DEFAULT ''",
       `CREATE TABLE IF NOT EXISTS user_settings (
         user_id               INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -148,6 +152,8 @@ const SHARED_SCHEMA = {
         attachment_name TEXT    NOT NULL DEFAULT '',
         attachment_type TEXT    NOT NULL DEFAULT '',
         attachment_size INTEGER NOT NULL DEFAULT 0,
+        attachment_key  TEXT    NOT NULL DEFAULT '',
+        attachment_url  TEXT    NOT NULL DEFAULT '',
         attachment_data TEXT    NOT NULL DEFAULT '',
         sent_at         INTEGER NOT NULL DEFAULT (strftime('%s','now')),
         is_read         INTEGER NOT NULL DEFAULT 0
@@ -171,6 +177,8 @@ const SHARED_SCHEMA = {
       ['messages', 'attachment_name', "TEXT NOT NULL DEFAULT ''"],
       ['messages', 'attachment_type', "TEXT NOT NULL DEFAULT ''"],
       ['messages', 'attachment_size', 'INTEGER NOT NULL DEFAULT 0'],
+      ['messages', 'attachment_key', "TEXT NOT NULL DEFAULT ''"],
+      ['messages', 'attachment_url', "TEXT NOT NULL DEFAULT ''"],
       ['messages', 'attachment_data', "TEXT NOT NULL DEFAULT ''"]
     ]
   }

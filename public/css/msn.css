@@ -435,6 +435,66 @@ body {
 .chat-header-bar .avatar-img { width: 36px; height: 36px; }
 .chat-partner-display { font-weight: bold; font-size: 12px; color: #002; }
 
+.chat-header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.chat-mini-btn {
+  border: 1px solid #90b0d8;
+  border-radius: 3px;
+  background: #f2f7ff;
+  width: 24px;
+  height: 22px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.chat-mini-btn:hover { background: #e2edff; }
+
+.call-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--msn-border);
+  background: linear-gradient(180deg, #eef5ff 0%, #dde8fb 100%);
+}
+
+.call-status {
+  color: #245;
+  font-size: 10px;
+}
+
+.media-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding: 8px;
+  background: #d9e6fb;
+  border-bottom: 1px solid var(--msn-border);
+}
+
+.remote-video {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background: #0b1220;
+  border-radius: 4px;
+  border: 1px solid #6c89ba;
+}
+
+.local-video {
+  width: 140px;
+  height: 92px;
+  object-fit: cover;
+  background: #0b1220;
+  border: 1px solid #6c89ba;
+  border-radius: 4px;
+  justify-self: end;
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;

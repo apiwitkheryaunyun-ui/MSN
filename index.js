@@ -5,6 +5,7 @@ const { Server } = require('socket.io');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const path = require('path');
+const fs = require('fs');
 
 const db = require('./server/db/schema');
 const authRouter = require('./server/routes/auth');
@@ -36,12 +37,38 @@ app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+const uploadsDir = process.env.LOCAL_STORAGE_PATH || path.join(__dirname, 'data/uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
+
 // �� API Routes ������������������������������������������������
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/friends', friendsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/chat', chatRouter);
+
+app.get('/api/config/webrtc', (req, res) => {
+  const stunUrls = (process.env.WEBRTC_STUN_URLS || 'stun:stun.l.google.com:19302')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+  const turnUrls = (process.env.WEBRTC_TURN_URLS || '')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+  const iceServers = [{ urls: stunUrls }];
+  if (turnUrls.length && process.env.WEBRTC_TURN_USERNAME && process.env.WEBRTC_TURN_CREDENTIAL) {
+    iceServers.push({
+      urls: turnUrls,
+      username: process.env.WEBRTC_TURN_USERNAME,
+      credential: process.env.WEBRTC_TURN_CREDENTIAL,
+    });
+  }
+
+  return res.json({ ok: true, webrtc: { iceServers } });
+});
 
 // SPA fallback
 app.get('/{*path}', (req, res) => {
@@ -170,6 +197,15 @@ io.on('connection', async (socket) => {
         }
       });
 
+      if (conversationKind === 'group') {
+        recipients.forEach((recipientId) => {
+          const recipientSockets = onlineUsers.get(recipientId);
+          if (recipientSockets) {
+            recipientSockets.forEach((sid) => io.to(sid).emit('group:updated', { conversation_id: convId }));
+          }
+        });
+      }
+
       const senderSockets = onlineUsers.get(uid);
       if (senderSockets) {
         senderSockets.forEach((sid) => {
@@ -205,6 +241,63 @@ io.on('connection', async (socket) => {
       const sender = await db.get('SELECT msn_id, display_name, username FROM users WHERE id=?', [uid]);
       sockets.forEach(sid => io.to(sid).emit('friend:request_received', sender));
     }
+  });
+
+  socket.on('group:notify', ({ conversation_id, member_ids = [], type = 'updated' }) => {
+    const targets = [...new Set((member_ids || []).map(Number).filter(Boolean))];
+    targets.forEach((targetId) => {
+      const sockets = onlineUsers.get(targetId);
+      if (sockets) {
+        sockets.forEach((sid) => io.to(sid).emit('group:updated', { conversation_id, type }));
+      }
+    });
+  });
+
+  socket.on('call:invite', ({ to_user_id, call_id, call_type = 'voice', conversation_id }) => {
+    const recipientSockets = onlineUsers.get(Number(to_user_id));
+    if (!recipientSockets) return;
+    recipientSockets.forEach((sid) => io.to(sid).emit('call:incoming', {
+      from_user_id: uid,
+      call_id,
+      call_type,
+      conversation_id: conversation_id || null,
+    }));
+  });
+
+  socket.on('call:accept', ({ to_user_id, call_id }) => {
+    const recipientSockets = onlineUsers.get(Number(to_user_id));
+    if (!recipientSockets) return;
+    recipientSockets.forEach((sid) => io.to(sid).emit('call:accepted', { from_user_id: uid, call_id }));
+  });
+
+  socket.on('call:reject', ({ to_user_id, call_id }) => {
+    const recipientSockets = onlineUsers.get(Number(to_user_id));
+    if (!recipientSockets) return;
+    recipientSockets.forEach((sid) => io.to(sid).emit('call:rejected', { from_user_id: uid, call_id }));
+  });
+
+  socket.on('call:end', ({ to_user_id, call_id }) => {
+    const recipientSockets = onlineUsers.get(Number(to_user_id));
+    if (!recipientSockets) return;
+    recipientSockets.forEach((sid) => io.to(sid).emit('call:ended', { from_user_id: uid, call_id }));
+  });
+
+  socket.on('webrtc:offer', ({ to_user_id, call_id, sdp }) => {
+    const recipientSockets = onlineUsers.get(Number(to_user_id));
+    if (!recipientSockets) return;
+    recipientSockets.forEach((sid) => io.to(sid).emit('webrtc:offer', { from_user_id: uid, call_id, sdp }));
+  });
+
+  socket.on('webrtc:answer', ({ to_user_id, call_id, sdp }) => {
+    const recipientSockets = onlineUsers.get(Number(to_user_id));
+    if (!recipientSockets) return;
+    recipientSockets.forEach((sid) => io.to(sid).emit('webrtc:answer', { from_user_id: uid, call_id, sdp }));
+  });
+
+  socket.on('webrtc:ice-candidate', ({ to_user_id, call_id, candidate }) => {
+    const recipientSockets = onlineUsers.get(Number(to_user_id));
+    if (!recipientSockets) return;
+    recipientSockets.forEach((sid) => io.to(sid).emit('webrtc:ice-candidate', { from_user_id: uid, call_id, candidate }));
   });
 });
 

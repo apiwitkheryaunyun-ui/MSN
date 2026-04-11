@@ -13,8 +13,13 @@ const {
   ensureAcceptedFriendship,
   getConversationById,
   ensureConversationMember,
+  getConversationMembers,
   getOrCreateDirectConversation,
   createGroupConversation,
+  renameGroupConversation,
+  inviteGroupMembers,
+  removeGroupMember,
+  leaveGroupConversation,
   createMessage,
 } = require('../services/chatService');
 
@@ -65,6 +70,59 @@ router.post('/groups', auth, rateLimit({ key: 'groups-create', limit: 12, window
   }
 });
 
+router.patch('/groups/:conversationId', auth, async (req, res) => {
+  try {
+    const conversationId = parseInt(req.params.conversationId, 10);
+    const group = await renameGroupConversation(conversationId, req.user.userId, req.body.title);
+    return res.json({ ok: true, group });
+  } catch (error) {
+    return res.status(400).json({ error: error.message || 'เปลี่ยนชื่อกลุ่มไม่สำเร็จ' });
+  }
+});
+
+router.get('/groups/:conversationId/members', auth, async (req, res) => {
+  const conversationId = parseInt(req.params.conversationId, 10);
+  const conv = await getConversationById(conversationId);
+  if (!conv || conv.kind !== 'group') return res.status(404).json({ error: 'ไม่พบห้องแชตกลุ่ม' });
+  const member = await ensureConversationMember(conversationId, req.user.userId);
+  if (!member) return res.status(403).json({ error: 'ไม่มีสิทธิ์เข้าถึงห้องนี้' });
+
+  const members = await getConversationMembers(conversationId);
+  return res.json({ ok: true, members, owner_id: conv.owner_id });
+});
+
+router.post('/groups/:conversationId/invite', auth, async (req, res) => {
+  try {
+    const conversationId = parseInt(req.params.conversationId, 10);
+    const memberIds = Array.isArray(req.body.member_ids) ? req.body.member_ids : [];
+    const members = await inviteGroupMembers(conversationId, req.user.userId, memberIds);
+    return res.json({ ok: true, members });
+  } catch (error) {
+    return res.status(400).json({ error: error.message || 'เชิญสมาชิกไม่สำเร็จ' });
+  }
+});
+
+router.delete('/groups/:conversationId/members/:memberId', auth, async (req, res) => {
+  try {
+    const conversationId = parseInt(req.params.conversationId, 10);
+    const memberId = parseInt(req.params.memberId, 10);
+    const members = await removeGroupMember(conversationId, req.user.userId, memberId);
+    return res.json({ ok: true, members });
+  } catch (error) {
+    return res.status(400).json({ error: error.message || 'ลบสมาชิกไม่สำเร็จ' });
+  }
+});
+
+router.post('/groups/:conversationId/leave', auth, async (req, res) => {
+  try {
+    const conversationId = parseInt(req.params.conversationId, 10);
+    await leaveGroupConversation(conversationId, req.user.userId);
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(400).json({ error: error.message || 'ออกจากกลุ่มไม่สำเร็จ' });
+  }
+});
+
 router.get('/conversations/:conversationId/messages', auth, async (req, res) => {
   const conversationId = parseInt(req.params.conversationId, 10);
   const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
@@ -80,7 +138,7 @@ router.get('/conversations/:conversationId/messages', auth, async (req, res) => 
 
   const messages = (await db.all(`
     SELECT m.id, m.sender_id, m.content, m.msg_type, m.sent_at, m.is_read,
-           m.attachment_name, m.attachment_type, m.attachment_size, m.attachment_data,
+        m.attachment_name, m.attachment_type, m.attachment_size, m.attachment_key, m.attachment_url, m.attachment_data,
            u.display_name AS sender_name, u.avatar_url AS sender_avatar
     FROM messages m
     JOIN users u ON u.id = m.sender_id
@@ -110,7 +168,7 @@ router.get('/:friendId/messages', auth, async (req, res) => {
 
   const messages = (await db.all(`
     SELECT m.id, m.sender_id, m.content, m.msg_type, m.sent_at, m.is_read,
-           m.attachment_name, m.attachment_type, m.attachment_size, m.attachment_data,
+        m.attachment_name, m.attachment_type, m.attachment_size, m.attachment_key, m.attachment_url, m.attachment_data,
            u.display_name AS sender_name, u.avatar_url AS sender_avatar
     FROM messages m
     JOIN users u ON u.id = m.sender_id

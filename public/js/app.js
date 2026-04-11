@@ -16,6 +16,8 @@ let settings = {
 };
 let chatWindows = {};
 let typingTimers = {};
+let webrtcConfig = { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] };
+let activeCalls = new Map();
 
 const TYPING_DEBOUNCE = 1500;
 const $ = (id) => document.getElementById(id);
@@ -90,6 +92,13 @@ async function loadSettings() {
   }
 }
 
+async function loadWebrtcConfig() {
+  const data = await api('GET', '/api/config/webrtc');
+  if (data.ok && data.webrtc) {
+    webrtcConfig = data.webrtc;
+  }
+}
+
 async function saveSettings(patch) {
   const data = await api('PATCH', '/api/settings/me', patch);
   if (!data.ok) {
@@ -112,7 +121,7 @@ async function startApp() {
   authScreen.classList.add('hidden');
   app.classList.remove('hidden');
   setProfileFields();
-  await Promise.all([loadSettings(), loadFriends(), loadGroups(), loadPendingRequests()]);
+  await Promise.all([loadSettings(), loadWebrtcConfig(), loadFriends(), loadGroups(), loadPendingRequests()]);
   connectSocket();
   setInterval(loadPendingRequests, 30000);
   setInterval(loadGroups, 45000);
@@ -450,9 +459,22 @@ async function openConversationWindow(meta) {
   const input = win.querySelector('.chat-input');
   const fileInput = win.querySelector('.file-input');
   const typingIndicator = win.querySelector('.typing-indicator');
+  const callStrip = win.querySelector('.call-strip');
+  const callStatus = win.querySelector('.call-status');
+  const mediaStage = win.querySelector('.media-stage');
+  const localVideo = win.querySelector('.local-video');
+  const remoteVideo = win.querySelector('.remote-video');
   if (meta.kind === 'group') typingIndicator.classList.add('hidden');
 
+  if (meta.kind === 'group') {
+    win.querySelector('.group-rename-btn').classList.remove('hidden');
+    win.querySelector('.group-invite-btn').classList.remove('hidden');
+    win.querySelector('.group-members-btn').classList.remove('hidden');
+    win.querySelector('.group-leave-btn').classList.remove('hidden');
+  }
+
   win.querySelector('.chat-close').onclick = () => {
+    endCallForWindow(win, true);
     win.remove();
     delete chatWindows[meta.key];
   };
@@ -480,6 +502,21 @@ async function openConversationWindow(meta) {
   win.querySelector('.attach-btn').onclick = () => fileInput.click();
   fileInput.onchange = () => sendFileMessage(meta, win, fileInput, input);
 
+  win.querySelector('.group-rename-btn').onclick = () => renameGroup(meta);
+  win.querySelector('.group-invite-btn').onclick = () => inviteMembers(meta);
+  win.querySelector('.group-members-btn').onclick = () => manageMembers(meta);
+  win.querySelector('.group-leave-btn').onclick = () => leaveGroup(meta, win);
+
+  win.querySelector('.call-voice-btn').onclick = () => initiateCall(meta, win, 'voice');
+  win.querySelector('.call-video-btn').onclick = () => initiateCall(meta, win, 'video');
+  win.querySelector('.end-call-btn').onclick = () => endCallForWindow(win, false);
+
+  callStrip.classList.add('hidden');
+  mediaStage.classList.add('hidden');
+  localVideo.srcObject = null;
+  remoteVideo.srcObject = null;
+  callStatus.textContent = 'Call inactive';
+
   $('chat-windows').appendChild(win);
   chatWindows[meta.key] = win;
   makeDraggable(win, win.querySelector('.chat-titlebar'));
@@ -495,6 +532,91 @@ async function openConversationWindow(meta) {
   win.querySelector('.chat-messages').scrollTop = win.querySelector('.chat-messages').scrollHeight;
   input.focus();
   return win;
+}
+
+async function renameGroup(meta) {
+  if (meta.kind !== 'group') return;
+  const newTitle = prompt('Rename group', meta.title || '');
+  if (!newTitle) return;
+
+  const data = await api('PATCH', `/api/chat/groups/${meta.targetId}`, { title: newTitle });
+  if (!data.ok) {
+    toast(data.error || 'เปลี่ยนชื่อไม่สำเร็จ');
+    return;
+  }
+
+  meta.title = data.group.title;
+  const win = chatWindows[meta.key];
+  if (win) {
+    win.querySelector('.chat-partner-name').textContent = data.group.title;
+    win.querySelector('.chat-partner-display').textContent = data.group.title;
+  }
+  await loadGroups();
+  if (socket) {
+    const membersRes = await api('GET', `/api/chat/groups/${meta.targetId}/members`);
+    if (membersRes.ok) socket.emit('group:notify', {
+      conversation_id: meta.targetId,
+      member_ids: membersRes.members.map((m) => m.id),
+      type: 'rename'
+    });
+  }
+}
+
+async function inviteMembers(meta) {
+  if (meta.kind !== 'group') return;
+  const input = prompt('Invite by user ids (comma separated)');
+  if (!input) return;
+  const memberIds = input.split(',').map((v) => Number(v.trim())).filter(Boolean);
+  const data = await api('POST', `/api/chat/groups/${meta.targetId}/invite`, { member_ids: memberIds });
+  if (!data.ok) {
+    toast(data.error || 'เชิญสมาชิกไม่สำเร็จ');
+    return;
+  }
+  toast('เชิญสมาชิกแล้ว');
+  await loadGroups();
+  if (socket) socket.emit('group:notify', { conversation_id: meta.targetId, member_ids: data.members.map((m) => m.id), type: 'invite' });
+}
+
+async function manageMembers(meta) {
+  if (meta.kind !== 'group') return;
+  const data = await api('GET', `/api/chat/groups/${meta.targetId}/members`);
+  if (!data.ok) {
+    toast(data.error || 'โหลดสมาชิกไม่สำเร็จ');
+    return;
+  }
+
+  const ownerTag = (id) => Number(id) === Number(data.owner_id) ? ' (owner)' : '';
+  const summary = data.members.map((m) => `${m.id}: ${m.display_name}${ownerTag(m.id)}`).join('\n');
+  const memberId = prompt(`Members:\n${summary}\n\nType member id to remove:`);
+  if (!memberId) return;
+
+  const removeRes = await api('DELETE', `/api/chat/groups/${meta.targetId}/members/${memberId}`);
+  if (!removeRes.ok) {
+    toast(removeRes.error || 'ลบสมาชิกไม่สำเร็จ');
+    return;
+  }
+  toast('ลบสมาชิกแล้ว');
+  await loadGroups();
+  if (socket) socket.emit('group:notify', {
+    conversation_id: meta.targetId,
+    member_ids: removeRes.members.map((m) => m.id),
+    type: 'remove-member'
+  });
+}
+
+async function leaveGroup(meta, win) {
+  if (meta.kind !== 'group') return;
+  if (!confirm('Leave this group?')) return;
+  const data = await api('POST', `/api/chat/groups/${meta.targetId}/leave`);
+  if (!data.ok) {
+    toast(data.error || 'ออกจากกลุ่มไม่สำเร็จ');
+    return;
+  }
+  endCallForWindow(win, true);
+  win.remove();
+  delete chatWindows[meta.key];
+  await loadGroups();
+  toast('ออกจากกลุ่มแล้ว');
 }
 
 async function sendTextMessage(meta, win, inputEl, msgType = 'text', preset = null) {
@@ -583,10 +705,11 @@ function appendMessage(win, msg, meta) {
   const senderName = msg.sender_name || (isMine ? (me.display_name || me.username) : meta.title);
   let bodyHtml = '';
 
-  if (msg.msg_type === 'file' && msg.attachment_data) {
+  if (msg.msg_type === 'file' && (msg.attachment_url || msg.attachment_data)) {
+    const href = msg.attachment_url || msg.attachment_data;
     bodyHtml = `
       <div class="file-card">
-        <a class="file-link" href="${msg.attachment_data}" download="${escHtml(msg.attachment_name || 'file')}">${escHtml(msg.attachment_name || 'Download file')}</a>
+        <a class="file-link" href="${href}" download="${escHtml(msg.attachment_name || 'file')}" target="_blank" rel="noopener">${escHtml(msg.attachment_name || 'Download file')}</a>
         <small>${Math.max(1, Math.round((msg.attachment_size || 0) / 1024))} KB</small>
       </div>
     `;
@@ -667,6 +790,142 @@ function connectSocket() {
     toast(`👤 ${sender.display_name || sender.username} ขอเป็นเพื่อน (${sender.msn_id})`);
     loadPendingRequests();
   });
+
+  socket.on('group:updated', () => {
+    loadGroups();
+  });
+
+  socket.on('call:incoming', async ({ from_user_id, call_id, call_type }) => {
+    const friend = friends.find((f) => f.id === from_user_id);
+    if (!friend) return;
+    const accepted = confirm(`${friend.display_name || friend.username} calling (${call_type}). Accept?`);
+    if (!accepted) {
+      socket.emit('call:reject', { to_user_id: from_user_id, call_id });
+      return;
+    }
+
+    socket.emit('call:accept', { to_user_id: from_user_id, call_id });
+    const win = await openDirectChat(friend);
+    await beginPeerConnection(win, from_user_id, call_id, call_type, false);
+  });
+
+  socket.on('call:accepted', async ({ from_user_id, call_id }) => {
+    const key = directKey(from_user_id);
+    const state = activeCalls.get(key);
+    if (!state) return;
+    const offer = await state.pc.createOffer();
+    await state.pc.setLocalDescription(offer);
+    socket.emit('webrtc:offer', { to_user_id: from_user_id, call_id, sdp: offer });
+  });
+
+  socket.on('call:rejected', ({ from_user_id }) => {
+    toast('Call rejected');
+    const win = chatWindows[directKey(from_user_id)];
+    if (win) endCallForWindow(win, true);
+  });
+
+  socket.on('call:ended', ({ from_user_id }) => {
+    const win = chatWindows[directKey(from_user_id)];
+    if (win) endCallForWindow(win, true);
+  });
+
+  socket.on('webrtc:offer', async ({ from_user_id, call_id, sdp }) => {
+    const win = chatWindows[directKey(from_user_id)];
+    if (!win) return;
+    const state = activeCalls.get(win.dataset.chatKey);
+    if (!state) return;
+    await state.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+    const answer = await state.pc.createAnswer();
+    await state.pc.setLocalDescription(answer);
+    socket.emit('webrtc:answer', { to_user_id: from_user_id, call_id, sdp: answer });
+  });
+
+  socket.on('webrtc:answer', async ({ from_user_id, sdp }) => {
+    const win = chatWindows[directKey(from_user_id)];
+    if (!win) return;
+    const state = activeCalls.get(win.dataset.chatKey);
+    if (!state) return;
+    await state.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+  });
+
+  socket.on('webrtc:ice-candidate', async ({ from_user_id, candidate }) => {
+    const win = chatWindows[directKey(from_user_id)];
+    if (!win) return;
+    const state = activeCalls.get(win.dataset.chatKey);
+    if (!state || !candidate) return;
+    await state.pc.addIceCandidate(new RTCIceCandidate(candidate));
+  });
+}
+
+async function initiateCall(meta, win, callType) {
+  if (meta.kind !== 'direct') {
+    toast('Voice/Video ตอนนี้รองรับแชต 1:1 เท่านั้น');
+    return;
+  }
+  const callId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  await beginPeerConnection(win, meta.targetId, callId, callType, true);
+  socket.emit('call:invite', { to_user_id: meta.targetId, call_id: callId, call_type: callType });
+}
+
+async function beginPeerConnection(win, peerUserId, callId, callType, outgoing) {
+  const key = win.dataset.chatKey;
+  endCallForWindow(win, true);
+
+  const localStream = await navigator.mediaDevices.getUserMedia({
+    audio: true,
+    video: callType === 'video',
+  });
+
+  const pc = new RTCPeerConnection(webrtcConfig);
+  localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+
+  const remoteStream = new MediaStream();
+  pc.ontrack = (event) => {
+    event.streams[0].getTracks().forEach((track) => remoteStream.addTrack(track));
+    win.querySelector('.remote-video').srcObject = remoteStream;
+  };
+
+  pc.onicecandidate = (event) => {
+    if (!event.candidate) return;
+    socket.emit('webrtc:ice-candidate', {
+      to_user_id: peerUserId,
+      call_id: callId,
+      candidate: event.candidate,
+    });
+  };
+
+  win.querySelector('.local-video').srcObject = localStream;
+  win.querySelector('.media-stage').classList.remove('hidden');
+  win.querySelector('.call-strip').classList.remove('hidden');
+  win.querySelector('.call-status').textContent = outgoing ? `Calling (${callType})...` : `Call connected (${callType})`;
+
+  activeCalls.set(key, {
+    callId,
+    peerUserId,
+    callType,
+    pc,
+    localStream,
+  });
+}
+
+function endCallForWindow(win, silent) {
+  const key = win.dataset.chatKey;
+  const state = activeCalls.get(key);
+  if (!state) return;
+
+  try { state.pc.close(); } catch (_) {}
+  try { state.localStream.getTracks().forEach((track) => track.stop()); } catch (_) {}
+
+  win.querySelector('.local-video').srcObject = null;
+  win.querySelector('.remote-video').srcObject = null;
+  win.querySelector('.media-stage').classList.add('hidden');
+  win.querySelector('.call-strip').classList.add('hidden');
+  win.querySelector('.call-status').textContent = 'Call inactive';
+
+  if (!silent && socket) {
+    socket.emit('call:end', { to_user_id: state.peerUserId, call_id: state.callId });
+  }
+  activeCalls.delete(key);
 }
 
 function makeDraggable(win, handle) {

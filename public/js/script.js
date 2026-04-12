@@ -64,6 +64,14 @@ let eqFilters = [];
 let mediaLibraryQuery = "";
 let mediaLibrarySort = "original";
 let currentPhotoIndex = 0;
+const WINDOW_SNAP_PX = 12;
+
+const UI_FX_FREQ = {
+  open: 840,
+  minimize: 220,
+  close: 180,
+  start: 520,
+};
 
 const gadgetStorageKey = "xp-enabled-gadgets";
 const noteKey = "xp-widget-note";
@@ -540,6 +548,89 @@ function updateClock() {
   }
 }
 
+function playUiFx(kind) {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) {
+    return;
+  }
+
+  try {
+    const context = new AudioContextClass();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = kind === "start" ? "triangle" : "sine";
+    oscillator.frequency.value = UI_FX_FREQ[kind] || 420;
+    gain.gain.value = 0.0001;
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    const now = context.currentTime;
+    gain.gain.exponentialRampToValueAtTime(0.06, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+    oscillator.start(now);
+    oscillator.stop(now + 0.15);
+  } catch {
+    // Ignore browsers that block instant audio context creation.
+  }
+}
+
+function installXpTooltips() {
+  document.querySelectorAll("[title]").forEach((element) => {
+    const text = element.getAttribute("title");
+    if (!text || element.dataset.xpTip) {
+      return;
+    }
+    element.dataset.xpTip = text;
+    element.setAttribute("aria-label", text);
+    element.removeAttribute("title");
+    element.classList.add("xp-tip-target");
+  });
+}
+
+function installRippleEffects() {
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest(".start-btn, .task-btn, .win-btn, .window-toolbar button, .icon-btn, .gadget-toggle-btn");
+    if (!button) {
+      return;
+    }
+
+    const rect = button.getBoundingClientRect();
+    const ripple = document.createElement("span");
+    ripple.className = "xp-ripple";
+    const size = Math.max(rect.width, rect.height) * 1.2;
+    ripple.style.width = `${size}px`;
+    ripple.style.height = `${size}px`;
+    ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
+    ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
+    button.appendChild(ripple);
+    ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+  });
+}
+
+function initDesktopAeroBubbles() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+  if (!desktop || desktop.querySelector(".aero-desktop-bubble-layer")) {
+    return;
+  }
+
+  const layer = document.createElement("div");
+  layer.className = "aero-desktop-bubble-layer";
+  desktop.appendChild(layer);
+
+  for (let i = 0; i < 10; i += 1) {
+    const bubble = document.createElement("div");
+    bubble.className = "aero-desktop-bubble";
+    const size = 10 + Math.floor(Math.random() * 18);
+    bubble.style.width = `${size}px`;
+    bubble.style.height = `${size}px`;
+    bubble.style.left = `${Math.floor(Math.random() * 96)}%`;
+    bubble.style.animationDuration = `${14 + Math.floor(Math.random() * 12)}s`;
+    bubble.style.animationDelay = `${Math.floor(Math.random() * 9)}s`;
+    layer.appendChild(bubble);
+  }
+}
+
 function cycleStatus() {
   if (!statusEl) {
     return;
@@ -618,6 +709,7 @@ function openWindow(appId) {
   windowEl.classList.remove("is-hidden");
   windowEl.classList.remove("is-minimized");
   windowEl.classList.add("is-opening");
+  playUiFx("open");
   ensureTaskButton(appId).classList.remove("minimized");
   normalizeWindowPosition(windowEl);
   focusWindow(windowEl);
@@ -648,6 +740,7 @@ function hideWindow(windowEl, animationClass) {
 function minimizeWindow(windowEl) {
   const appId = windowEl.dataset.app;
   windowEl.classList.add("is-minimized");
+  playUiFx("minimize");
 
   if (isMobileLayout) {
     windowEl.classList.add("is-hidden");
@@ -665,6 +758,7 @@ function minimizeWindow(windowEl) {
 
 function closeWindow(windowEl) {
   const appId = windowEl.dataset.app;
+  playUiFx("close");
 
   if (isMobileLayout) {
     windowEl.classList.add("is-hidden");
@@ -709,6 +803,9 @@ function toggleStartMenu(forceOpen) {
   startMenu.classList.toggle("open", shouldOpen);
   startBtn.setAttribute("aria-expanded", String(shouldOpen));
   startMenu.setAttribute("aria-hidden", String(!shouldOpen));
+  if (shouldOpen) {
+    playUiFx("start");
+  }
 }
 
 function handleWindowControlClick(event) {
@@ -751,6 +848,19 @@ function dragMove(event) {
 
   nextLeft = Math.min(Math.max(0, nextLeft), maxLeft);
   nextTop = Math.min(Math.max(0, nextTop), maxTop);
+
+  if (nextLeft <= WINDOW_SNAP_PX) {
+    nextLeft = 0;
+  }
+  if (nextTop <= WINDOW_SNAP_PX) {
+    nextTop = 0;
+  }
+  if (maxLeft - nextLeft <= WINDOW_SNAP_PX) {
+    nextLeft = maxLeft;
+  }
+  if (maxTop - nextTop <= WINDOW_SNAP_PX) {
+    nextTop = maxTop;
+  }
 
   windowEl.style.left = `${nextLeft}px`;
   windowEl.style.top = `${nextTop}px`;
@@ -1227,6 +1337,9 @@ updateWeatherWidget();
 updatePhotoFrame();
 syncGadgetVisibility();
 cycleStatus();
+installXpTooltips();
+installRippleEffects();
+initDesktopAeroBubbles();
 
 // On mobile: don't auto-open forum, hide gadgets, and disable sidebar
 if (isMobileLayout) {

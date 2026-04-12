@@ -5,14 +5,10 @@ const auth = require('../middleware');
 
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const MESSAGE_TYPES = new Set(['text', 'nudge', 'wink', 'file']);
-const IS_GROUP_TRUE_SQL = db.isPG
-  ? "COALESCE(c.is_group::text, '0') IN ('1','t','true')"
-  : 'c.is_group = 1';
-const IS_GROUP_FALSE_SQL = db.isPG
-  ? "COALESCE(c.is_group::text, '0') IN ('0','f','false')"
-  : 'c.is_group = 0';
-const DIRECT_GROUP_FLAG = db.isPG ? false : 0;
-const CHAT_GROUP_FLAG = db.isPG ? true : 1;
+const IS_GROUP_TRUE_SQL = 'c.is_group = 1';
+const IS_GROUP_FALSE_SQL = 'c.is_group = 0';
+const DIRECT_GROUP_FLAG = 0;
+const CHAT_GROUP_FLAG = 1;
 
 async function getOrCreateConv(userId, friendId) {
   const existing = await db.get(`

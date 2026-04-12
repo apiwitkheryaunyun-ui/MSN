@@ -16,6 +16,8 @@
       href="https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="vendor/98.css/98.css" />
+    <link rel="stylesheet" href="vendor/7.css/7.css" />
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
@@ -75,8 +77,8 @@
           <p id="cpu-meter-text">CPU 24%</p>
         </section>
 
-        <section class="desktop-gadget gadget-note" data-gadget="note">
-          <header>Notes</header>
+        <section class="" data-gadget="note">
+          
           <div class="sticky-color-picker" role="group" aria-label="Sticky note color picker">
             <button type="button" class="sticky-color-btn active" data-sticky-color="white" aria-label="White note"></button>
             <button type="button" class="sticky-color-btn" data-sticky-color="yellow" aria-label="Yellow note"></button>
@@ -102,13 +104,13 @@
       </aside>
 
       <section class="window-layer" id="window-layer">
-        <section class="xp-window utility-window is-hidden" data-app="msn" aria-label="MSN Launcher window">
-          <header class="titlebar" data-drag-handle="true">
+        <section class="xp-window window glass utility-window is-hidden" data-app="msn" aria-label="MSN Launcher window">
+          <header class="titlebar title-bar active" data-drag-handle="true">
             <div class="title-left">
               <span class="title-dot" aria-hidden="true"></span>
               <strong>MSN Messenger Live</strong>
             </div>
-            <div class="window-controls">
+            <div class="window-controls title-bar-controls">
               <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
               <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
               <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
@@ -118,7 +120,7 @@
             <button type="button">MSN</button>
             <a class="msn-open-tab" href="msn.html" target="_blank" rel="noopener noreferrer">Open in New Tab</a>
           </div>
-          <div class="utility-content msn-launch-panel">
+          <div class="utility-content window-body msn-launch-panel">
             
             <iframe
               class="msn-launch-frame"
@@ -131,13 +133,13 @@
           </div>
         </section>
 
-        <main class="xp-window" data-app="forum" aria-label="Forum Explorer window">
-          <header class="titlebar" data-drag-handle="true">
+        <main class="xp-window window glass" data-app="forum" aria-label="Forum Explorer window">
+          <header class="titlebar title-bar active" data-drag-handle="true">
             <div class="title-left">
               <span class="title-dot" aria-hidden="true"></span>
               <strong>Forum Explorer</strong>
             </div>
-            <div class="window-controls">
+            <div class="window-controls title-bar-controls">
               <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
               <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
               <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
@@ -152,7 +154,7 @@
             <button type="button">Help</button>
           </div>
 
-          <div class="window-content wiki-layout">
+          <div class="window-content window-body wiki-layout">
             <aside class="side-panel wiki-sidebar">
               <h2>Table of Contents</h2>
               <ul class="wiki-toc">
@@ -549,13 +551,13 @@
           </div>
         </main>
 
-        <section class="xp-window utility-window is-hidden" data-app="media" aria-label="Media Player window">
-          <header class="titlebar" data-drag-handle="true">
+        <section class="xp-window window glass utility-window is-hidden" data-app="media" aria-label="Media Player window">
+          <header class="titlebar title-bar active" data-drag-handle="true">
             <div class="title-left">
               <span class="title-dot" aria-hidden="true"></span>
               <strong>Windows Media Player</strong>
             </div>
-            <div class="window-controls">
+            <div class="window-controls title-bar-controls">
               <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
               <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
               <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
@@ -568,7 +570,7 @@
             <button type="button" data-wmp-menu="tools">Tools</button>
             <button type="button" data-wmp-menu="help">Help</button>
           </div>
-          <div class="utility-content media-player-panel">
+          <div class="utility-content window-body media-player-panel">
             <div class="wmp9-shell" id="wmp-shell" data-wmp-skin="default">
               <aside class="wmp9-nav" aria-label="Player sections">
                 <button type="button" class="wmp9-nav-btn active" data-wmp-view="now-playing">Now Playing</button>
@@ -629,13 +631,13 @@
           </div>
         </section>
 
-        <section class="xp-window utility-window is-hidden" data-app="widgets" aria-label="Widgets window">
-          <header class="titlebar" data-drag-handle="true">
+        <section class="xp-window window glass utility-window is-hidden" data-app="widgets" aria-label="Widgets window">
+          <header class="titlebar title-bar active" data-drag-handle="true">
             <div class="title-left">
               <span class="title-dot" aria-hidden="true"></span>
               <strong>Desktop Widgets</strong>
             </div>
-            <div class="window-controls">
+            <div class="window-controls title-bar-controls">
               <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
               <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
               <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
@@ -646,7 +648,7 @@
             <button type="button">Themes</button>
             <button type="button">Options</button>
           </div>
-          <div class="utility-content widget-gallery-wrap">
+          <div class="utility-content window-body widget-gallery-wrap">
             <div class="widget-gallery-head">
               <strong>Gadget Gallery</strong>
               <label class="widget-search">
@@ -684,13 +686,13 @@
           </div>
         </section>
 
-        <section class="xp-window utility-window is-hidden" data-app="portfolio" aria-label="Portfolio window">
-          <header class="titlebar" data-drag-handle="true">
+        <section class="xp-window window glass utility-window is-hidden" data-app="portfolio" aria-label="Portfolio window">
+          <header class="titlebar title-bar active" data-drag-handle="true">
             <div class="title-left">
               <span class="title-dot" aria-hidden="true"></span>
               <strong>WorkJap Portfolio</strong>
             </div>
-            <div class="window-controls">
+            <div class="window-controls title-bar-controls">
               <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
               <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
               <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
@@ -701,7 +703,7 @@
             <button type="button">Projects</button>
             <button type="button">Tools</button>
           </div>
-          <div class="utility-content portfolio-panel">
+          <div class="utility-content window-body portfolio-panel">
             <div class="portfolio-header-card">
               <img src="Asset/49137b0a-f3f1-4aa5-9143-ed003eb04b3d (1).png" alt="Profile picture of WorkJap" class="portfolio-avatar" />
               <div>
@@ -740,13 +742,13 @@
           </div>
         </section>
 
-        <section class="xp-window utility-window is-hidden" data-app="topics" aria-label="Topics window">
-          <header class="titlebar" data-drag-handle="true">
+        <section class="xp-window window glass utility-window is-hidden" data-app="topics" aria-label="Topics window">
+          <header class="titlebar title-bar active" data-drag-handle="true">
             <div class="title-left">
               <span class="title-dot" aria-hidden="true"></span>
               <strong>Topic Manager</strong>
             </div>
-            <div class="window-controls">
+            <div class="window-controls title-bar-controls">
               <button type="button" class="win-btn" data-win-action="minimize" aria-label="Minimize">_</button>
               <button type="button" class="win-btn" data-win-action="maximize" aria-label="Maximize">&#9633;</button>
               <button type="button" class="win-btn close" data-win-action="close" aria-label="Close">&times;</button>
@@ -757,7 +759,7 @@
             <button type="button">Filter</button>
             <button type="button">Export</button>
           </div>
-          <div class="utility-content swatch-matcha gif-gallery">
+          <div class="utility-content window-body swatch-matcha gif-gallery">
             <p><strong>Early Webs Asset Collection (52 GIFs)</strong></p>
             <div class="gif-gallery-grid">
               <div class="gif-item"><a href="Asset/Early Webs Asset/2025-06-18-Aquarium.gif" target="_blank"><img src="Asset/Early Webs Asset/2025-06-18-Aquarium.gif" alt="2025-06-18-Aquarium.gif"><span class="gif-name">2025-06-18-Aquarium.gif</span></a></div>
@@ -834,7 +836,7 @@
         </div>
       </nav>
 
-      <section class="start-menu" id="start-menu" aria-hidden="true">
+      <section class="start-menu window glass" id="start-menu" aria-hidden="true">
         <header>
           <strong>Administrator</strong>
           <span>Windows XP Style</span>

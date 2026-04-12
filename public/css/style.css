@@ -100,6 +100,20 @@ body {
   backdrop-filter: blur(4px);
 }
 
+.desktop-gadget.gadget-note {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.desktop-gadget.gadget-note header {
+  margin-bottom: 0.22rem;
+  padding-left: 0.15rem;
+}
+
 .desktop-gadget header {
   font-size: 0.7rem;
   font-weight: 700;
@@ -527,6 +541,16 @@ body {
   will-change: transform, opacity;
 }
 
+.xp-window.window {
+  padding: 0;
+}
+
+.xp-window.window .window-body {
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+}
+
 .xp-window.is-hidden {
   display: none;
 }
@@ -610,6 +634,19 @@ body {
   box-shadow: inset 0 1px 0 rgba(255,255,255,.86), inset 0 -1px 0 rgba(16, 74, 151, .35);
   cursor: move;
   user-select: none;
+}
+
+.titlebar.title-bar {
+  padding-top: 0;
+}
+
+.window-controls.title-bar-controls {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.window-controls.title-bar-controls button {
+  min-width: 22px;
+  min-height: 20px;
 }
 
 .title-left {
@@ -1945,6 +1982,10 @@ button:focus-visible,
   opacity: 0;
   pointer-events: none;
   transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.start-menu.window {
+  padding: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

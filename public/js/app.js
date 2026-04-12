@@ -29,6 +29,24 @@ const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_AVATAR_EXPORT_BYTES = 320 * 1024;
 const AVATAR_CANVAS_SIZE = 180;
 const OPEN_CONVERSATIONS_KEY = 'msn-open-conversations';
+const WINDOW_SNAP_PX = 12;
+const SOUND_ASSETS = {
+  message_in: 'sounds/message-in.wav',
+  nudge: 'sounds/nudge.wav',
+  online: 'sounds/online.wav',
+  sign_in: 'sounds/sign-in.wav',
+  error: 'sounds/error.wav',
+};
+const SOUND_FREQ = {
+  message_in: 980,
+  nudge: 160,
+  online: 620,
+  sign_in: 780,
+  error: 220,
+};
+
+let topWindowZ = 320;
+let audioCtx = null;
 const $ = (id) => document.getElementById(id);
 const authScreen = $('auth-screen');
 const app = $('app');
@@ -49,6 +67,104 @@ function toast(msg, duration = 3500) {
   el.classList.remove('hidden');
   clearTimeout(toast._t);
   toast._t = setTimeout(() => el.classList.add('hidden'), duration);
+}
+
+function bumpWindowToFront(win) {
+  topWindowZ += 1;
+  win.style.zIndex = String(topWindowZ);
+}
+
+function ensureAudioContext() {
+  if (audioCtx) return audioCtx;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return null;
+  audioCtx = new Ctx();
+  return audioCtx;
+}
+
+function playFallbackTone(name) {
+  if (!settings.sounds_enabled) return;
+  const ctx = ensureAudioContext();
+  if (!ctx) return;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = name === 'nudge' ? 'square' : 'sine';
+  osc.frequency.value = SOUND_FREQ[name] || 540;
+  gain.gain.value = 0.0001;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  const now = ctx.currentTime;
+  gain.gain.exponentialRampToValueAtTime(0.08, now + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + (name === 'nudge' ? 0.22 : 0.14));
+  osc.start(now);
+  osc.stop(now + (name === 'nudge' ? 0.24 : 0.16));
+}
+
+function playSound(name) {
+  if (!settings.sounds_enabled) return;
+  const src = SOUND_ASSETS[name];
+  if (!src) {
+    playFallbackTone(name);
+    return;
+  }
+
+  const audio = new Audio(src);
+  audio.volume = name === 'nudge' ? 0.7 : 0.55;
+  audio.play().catch(() => playFallbackTone(name));
+}
+
+function hydrateTooltips(root = document) {
+  root.querySelectorAll('[title]').forEach((el) => {
+    const tip = el.getAttribute('title');
+    if (!tip || el.dataset.xpTip) return;
+    el.dataset.xpTip = tip;
+    el.setAttribute('aria-label', tip);
+    el.removeAttribute('title');
+    el.classList.add('xp-tip-target');
+  });
+}
+
+function initButtonRipple() {
+  if (initButtonRipple._ready) return;
+  initButtonRipple._ready = true;
+
+  document.addEventListener('click', (event) => {
+    const target = event.target.closest('.msn-btn, .chat-mini-btn, .win-btn, .chat-tool-btn');
+    if (!target) return;
+
+    const rect = target.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    ripple.className = 'xp-ripple';
+    const size = Math.max(rect.width, rect.height) * 1.2;
+    ripple.style.width = `${size}px`;
+    ripple.style.height = `${size}px`;
+    ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
+    ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
+    target.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+  });
+}
+
+function initAeroBubbles() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (document.querySelector('.aero-bubble-layer')) return;
+
+  const layer = document.createElement('div');
+  layer.className = 'aero-bubble-layer';
+  document.body.appendChild(layer);
+
+  for (let i = 0; i < 8; i += 1) {
+    const bubble = document.createElement('div');
+    bubble.className = 'aero-bubble';
+    const size = 10 + Math.floor(Math.random() * 18);
+    bubble.style.width = `${size}px`;
+    bubble.style.height = `${size}px`;
+    bubble.style.left = `${Math.floor(Math.random() * 96)}%`;
+    bubble.style.animationDuration = `${15 + Math.floor(Math.random() * 14)}s`;
+    bubble.style.animationDelay = `${Math.floor(Math.random() * 11)}s`;
+    layer.appendChild(bubble);
+  }
 }
 
 function showNetworkBanner(message, tone = 'warn', autoHideMs = 0) {
@@ -257,12 +373,16 @@ async function startApp() {
     document.body.classList.add('embedded-msn');
     app.classList.add('embedded-msn-app');
   }
+  initAeroBubbles();
+  initButtonRipple();
+  hydrateTooltips(document);
   setProfileFields();
   await Promise.all([loadSettings(), loadWebrtcConfig(), loadFriends(), loadGroups(), loadPendingRequests()]);
   connectSocket();
   await restoreOpenConversations();
   syncResponsiveState();
   window.addEventListener('resize', syncResponsiveState);
+  playSound('sign_in');
   setInterval(loadPendingRequests, 30000);
   setInterval(loadGroups, 45000);
 }
@@ -588,6 +708,7 @@ async function openGroupChat(group) {
 async function openConversationWindow(meta) {
   if (chatWindows[meta.key]) {
     activateEmbeddedChat(chatWindows[meta.key]);
+    if (!isFixedPaneMode()) bumpWindowToFront(chatWindows[meta.key]);
     chatWindows[meta.key].querySelector('.chat-input').focus();
     return chatWindows[meta.key];
   }
@@ -608,6 +729,13 @@ async function openConversationWindow(meta) {
     win.style.top = `${60 + offset}px`;
     win.style.left = `${320 + offset}px`;
   }
+
+  if (!isFixedPaneMode()) {
+    bumpWindowToFront(win);
+    win.addEventListener('pointerdown', () => bumpWindowToFront(win));
+  }
+
+  hydrateTooltips(win);
 
   const input = win.querySelector('.chat-input');
   const fileInput = win.querySelector('.file-input');
@@ -911,6 +1039,13 @@ function appendMessage(win, msg, meta) {
     <div class="msg-time">${fmtTime(msg.sent_at)}</div>
   `;
   win.querySelector('.chat-messages').appendChild(row);
+
+  if (!msg || msg.sender_id === me.id) return;
+  if (msg.msg_type === 'nudge') {
+    playSound('nudge');
+    return;
+  }
+  playSound('message_in');
 }
 
 function connectSocket() {
@@ -988,8 +1123,10 @@ function connectSocket() {
   socket.on('status:changed', ({ user_id, status }) => {
     const friend = friends.find((entry) => entry.id === user_id);
     if (!friend) return;
+    const prevStatus = friend.status;
     friend.status = status;
     renderFriends();
+    if (status === 'online' && prevStatus !== 'online') playSound('online');
     const win = chatWindows[directKey(user_id)];
     if (win) win.querySelector('.chat-partner-status').textContent = status;
   });
@@ -1163,11 +1300,21 @@ function makeDraggable(win, handle) {
     const rect = win.getBoundingClientRect();
     ox = event.clientX - rect.left;
     oy = event.clientY - rect.top;
-    win.style.zIndex = 300;
+    bumpWindowToFront(win);
 
     function onMove(moveEvent) {
-      win.style.left = `${Math.max(0, moveEvent.clientX - ox)}px`;
-      win.style.top = `${Math.max(0, moveEvent.clientY - oy)}px`;
+      const maxLeft = Math.max(0, window.innerWidth - rect.width);
+      const maxTop = Math.max(0, window.innerHeight - rect.height);
+      let nextLeft = Math.min(maxLeft, Math.max(0, moveEvent.clientX - ox));
+      let nextTop = Math.min(maxTop, Math.max(0, moveEvent.clientY - oy));
+
+      if (nextLeft <= WINDOW_SNAP_PX) nextLeft = 0;
+      if (nextTop <= WINDOW_SNAP_PX) nextTop = 0;
+      if (maxLeft - nextLeft <= WINDOW_SNAP_PX) nextLeft = maxLeft;
+      if (maxTop - nextTop <= WINDOW_SNAP_PX) nextTop = maxTop;
+
+      win.style.left = `${nextLeft}px`;
+      win.style.top = `${nextTop}px`;
     }
 
     function onUp() {

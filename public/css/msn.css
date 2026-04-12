@@ -76,6 +76,18 @@ body::after {
   z-index: -1;
 }
 
+body button {
+  min-width: 0;
+  min-height: 0;
+  font-family: inherit;
+}
+
+body button::before,
+body button::after {
+  content: none;
+  display: none;
+}
+
 *::-webkit-scrollbar { width: 17px; height: 17px; }
 *::-webkit-scrollbar-track {
   background: linear-gradient(90deg, #d8eaff 0%, #c2daf4 100%);
@@ -206,6 +218,8 @@ body::after {
   box-shadow: inset 1px 1px 0 rgba(255,255,255,.8), inset -1px -1px 0 rgba(0,0,0,.15);
   position: relative;
   overflow: hidden;
+  min-width: 0;
+  min-height: 0;
 }
 .msn-btn:hover { background: var(--msn-btn-hover); }
 .msn-btn:active { background: var(--msn-btn-active); border-color: #3064a0 rgba(255,255,255,.5) rgba(255,255,255,.5) #3064a0; }
@@ -269,6 +283,8 @@ body::after {
 .win-controls { display: flex; gap: 3px; }
 .win-btn {
   width: 20px; height: 20px;
+  min-width: 20px;
+  min-height: 20px;
   border: 1px solid rgba(15, 60, 128, .75);
   border-radius: 3px;
   background:
@@ -279,6 +295,8 @@ body::after {
   cursor: pointer;
   font-family: inherit;
   line-height: 1;
+  padding: 0;
+  flex: 0 0 20px;
   display: flex; align-items: center; justify-content: center;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.66), 0 1px 3px rgba(0, 42, 104, .34);
 }
@@ -565,8 +583,16 @@ body::after {
   background: linear-gradient(180deg, #f7fbff 0%, #dce9fb 100%);
   width: 24px;
   height: 22px;
+  min-width: 24px;
+  min-height: 22px;
   cursor: pointer;
   font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  flex: 0 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   overflow: hidden;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 1px 2px rgba(40,90,150,.2);
@@ -725,8 +751,17 @@ body::after {
 }
 .chat-tool-btn {
   background: none; border: 1px solid transparent;
-  border-radius: 2px; padding: 2px 6px; cursor: pointer;
+  border-radius: 2px; padding: 0; cursor: pointer;
+  width: 28px;
+  height: 24px;
+  min-width: 28px;
+  min-height: 24px;
+  flex: 0 0 28px;
   font-size: 14px; transition: border-color .1s;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   overflow: hidden;
 }
@@ -1645,6 +1680,19 @@ body {
   body:not(.embedded-msn) .chat-tool-btn {
     min-width: 44px;
     min-height: 44px;
+  }
+
+  body:not(.embedded-msn) .chat-mini-btn {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+
+  body:not(.embedded-msn) .win-btn,
+  body:not(.embedded-msn) .chat-tool-btn {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
   }
 
   body:not(.embedded-msn) .contact-status-msg,

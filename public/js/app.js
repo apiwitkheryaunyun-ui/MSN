@@ -437,6 +437,11 @@ $('app-logout').onclick = async () => {
   location.reload();
 };
 
+$('toolbar-logout-btn').onclick = async () => {
+  await api('POST', '/api/auth/logout');
+  location.reload();
+};
+
 let profileSaveTimer;
 function scheduleProfileSave() {
   clearTimeout(profileSaveTimer);

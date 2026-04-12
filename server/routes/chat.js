@@ -6,10 +6,10 @@ const { uploadAttachment } = require('../services/objectStorage');
 
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const MESSAGE_TYPES = new Set(['text', 'nudge', 'wink', 'file']);
-const IS_GROUP_TRUE_SQL = 'c.is_group = 1';
-const IS_GROUP_FALSE_SQL = 'c.is_group = 0';
-const DIRECT_GROUP_FLAG = 0;
-const CHAT_GROUP_FLAG = 1;
+const IS_GROUP_TRUE_SQL = "COALESCE(CAST(c.is_group AS TEXT), '0') IN ('1','true','t')";
+const IS_GROUP_FALSE_SQL = "COALESCE(CAST(c.is_group AS TEXT), '0') IN ('0','false','f')";
+const DIRECT_GROUP_FLAG = '0';
+const CHAT_GROUP_FLAG = '1';
 
 async function getOrCreateConv(userId, friendId) {
   const existing = await db.get(`

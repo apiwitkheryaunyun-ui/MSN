@@ -77,7 +77,18 @@
 
         <section class="desktop-gadget gadget-note" data-gadget="note">
           <header>Notes</header>
-          <textarea id="widget-note" rows="5" placeholder="พิมพ์โน้ตไว้ได้..." aria-label="Sticky note"></textarea>
+          <div class="sticky-color-picker" role="group" aria-label="Sticky note color picker">
+            <button type="button" class="sticky-color-btn active" data-sticky-color="white" aria-label="White note"></button>
+            <button type="button" class="sticky-color-btn" data-sticky-color="yellow" aria-label="Yellow note"></button>
+            <button type="button" class="sticky-color-btn" data-sticky-color="green" aria-label="Green note"></button>
+            <button type="button" class="sticky-color-btn" data-sticky-color="blue" aria-label="Blue note"></button>
+            <button type="button" class="sticky-color-btn" data-sticky-color="purple" aria-label="Purple note"></button>
+            <button type="button" class="sticky-color-btn" data-sticky-color="pink" aria-label="Pink note"></button>
+          </div>
+          <div class="winsticky white" id="widget-note" data-sticky-color="white" aria-label="Sticky note">
+            <div class="ws_top"></div>
+            <div class="ws_content" id="widget-note-content" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="พิมพ์โน้ตไว้ได้..."></div>
+          </div>
         </section>
 
         <section class="desktop-gadget gadget-photo" data-gadget="photo">

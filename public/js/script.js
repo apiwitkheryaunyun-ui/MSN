@@ -30,6 +30,8 @@ const widgetClockEl = document.getElementById("widget-clock");
 const cpuMeterBar = document.getElementById("cpu-meter-bar");
 const cpuMeterText = document.getElementById("cpu-meter-text");
 const widgetNoteEl = document.getElementById("widget-note");
+const widgetNoteContentEl = document.getElementById("widget-note-content");
+const stickyColorButtons = Array.from(document.querySelectorAll(".sticky-color-btn[data-sticky-color]"));
 const desktopGadgets = Array.from(document.querySelectorAll(".desktop-gadget[data-gadget]"));
 const gadgetTiles = Array.from(document.querySelectorAll(".gadget-tile[data-gadget-tile]"));
 const gadgetToggleButtons = Array.from(document.querySelectorAll(".gadget-toggle-btn[data-gadget-toggle]"));
@@ -75,6 +77,7 @@ const UI_FX_FREQ = {
 
 const gadgetStorageKey = "xp-enabled-gadgets";
 const noteKey = "xp-widget-note";
+const noteColorKey = "xp-widget-note-color";
 const weatherCities = [
   { city: "Palo Alto", temp: 64, summary: "Sunny and clear" },
   { city: "Bangkok", temp: 91, summary: "Warm with light haze" },
@@ -450,6 +453,24 @@ function filterGadgetTiles(query) {
     const title = tile.querySelector("h3")?.textContent?.toLowerCase() || "";
     tile.hidden = search.length > 0 && !title.includes(search);
   });
+}
+
+function setStickyColor(color) {
+  if (!widgetNoteEl) {
+    return;
+  }
+
+  const allowed = ["white", "yellow", "green", "blue", "purple", "pink"];
+  const nextColor = allowed.includes(color) ? color : "white";
+  widgetNoteEl.dataset.stickyColor = nextColor;
+  widgetNoteEl.classList.remove(...allowed);
+  widgetNoteEl.classList.add(nextColor);
+
+  stickyColorButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.stickyColor === nextColor);
+  });
+
+  localStorage.setItem(noteColorKey, nextColor);
 }
 
 function loadTrackByIndex(index) {
@@ -1271,13 +1292,29 @@ if (cpuMeterBar && cpuMeterText) {
   }, 1800);
 }
 
-if (widgetNoteEl) {
+if (widgetNoteContentEl) {
   const saved = localStorage.getItem(noteKey);
   if (saved !== null) {
-    widgetNoteEl.value = saved;
+    widgetNoteContentEl.textContent = saved;
   }
-  widgetNoteEl.addEventListener("input", () => {
-    localStorage.setItem(noteKey, widgetNoteEl.value);
+
+  const savedColor = localStorage.getItem(noteColorKey) || "white";
+  setStickyColor(savedColor);
+
+  widgetNoteContentEl.addEventListener("input", () => {
+    localStorage.setItem(noteKey, widgetNoteContentEl.textContent);
+  });
+}
+
+if (stickyColorButtons.length > 0) {
+  stickyColorButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const color = button.dataset.stickyColor;
+      if (!color) {
+        return;
+      }
+      setStickyColor(color);
+    });
   });
 }
 

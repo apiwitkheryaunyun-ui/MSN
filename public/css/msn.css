@@ -744,12 +744,40 @@ body.embedded-msn .embedded-close-btn {
 @media (max-width: 760px) {
   .embedded-msn-app {
     grid-template-columns: 1fr;
-    grid-template-rows: 48% 52%;
+    grid-template-rows: 1fr;
   }
 
   body.embedded-msn .buddy-window {
     border-right: 0;
-    border-bottom: 1px solid #8eaed8;
+  }
+
+  /* Single-pane switching: show buddy list by default, chat when mobile-chat-open */
+  body.embedded-msn #chat-windows {
+    display: none;
+  }
+
+  body.embedded-msn.mobile-chat-open #chat-windows {
+    display: block;
+  }
+
+  body.embedded-msn.mobile-chat-open .buddy-window {
+    display: none;
+  }
+
+  /* Show back-to-list button in embedded mobile */
+  body.embedded-msn .mobile-back-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Touch-friendly tap targets for embedded mobile */
+  body.embedded-msn .chat-mini-btn,
+  body.embedded-msn .msn-btn,
+  body.embedded-msn .win-btn,
+  body.embedded-msn .chat-tool-btn {
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 

@@ -22,6 +22,7 @@ const isEmbeddedMode = window.self !== window.top;
 const isTabletViewport = () => window.matchMedia('(min-width: 768px) and (max-width: 1024px)').matches;
 const isMobileViewport = () => window.matchMedia('(max-width: 767px)').matches;
 const isFixedPaneMode = () => isEmbeddedMode || isTabletViewport() || isMobileViewport();
+const isPaneSwitching = () => isMobileViewport() || (isEmbeddedMode && window.matchMedia('(max-width: 760px)').matches);
 
 const TYPING_DEBOUNCE = 1500;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -70,8 +71,7 @@ function hideNetworkBanner() {
 }
 
 function syncResponsiveState() {
-  if (isEmbeddedMode) return;
-  if (!isMobileViewport()) {
+  if (!isPaneSwitching()) {
     document.body.classList.remove('mobile-chat-open');
   }
 }
@@ -635,7 +635,7 @@ async function openConversationWindow(meta) {
       const nextWin = Object.values(chatWindows)[0];
       if (nextWin) activateEmbeddedChat(nextWin);
     }
-    if (!isEmbeddedMode && isMobileViewport()) {
+    if (isPaneSwitching()) {
       document.body.classList.remove('mobile-chat-open');
     }
   };
@@ -672,7 +672,7 @@ async function openConversationWindow(meta) {
   win.querySelector('.call-video-btn').onclick = () => initiateCall(meta, win, 'video');
   win.querySelector('.end-call-btn').onclick = () => endCallForWindow(win, false);
   win.querySelector('.mobile-back-btn').onclick = () => {
-    if (!isEmbeddedMode && isMobileViewport()) {
+    if (isPaneSwitching()) {
       document.body.classList.remove('mobile-chat-open');
     }
   };
@@ -701,7 +701,7 @@ async function openConversationWindow(meta) {
     makeDraggable(win, win.querySelector('.chat-titlebar'));
   }
   activateEmbeddedChat(win);
-  if (!isEmbeddedMode && isMobileViewport()) {
+  if (isPaneSwitching()) {
     document.body.classList.add('mobile-chat-open');
   }
 

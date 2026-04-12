@@ -541,6 +541,7 @@ body {
   padding: 8px 10px;
   background: #fff;
   display: flex; flex-direction: column; gap: 6px;
+  justify-content: flex-end;
   min-height: 180px;
   max-height: 300px;
 }
@@ -1307,21 +1308,7 @@ body {
   background: linear-gradient(180deg, #fff4df 0%, #ffe8bf 100%);
 }
 
-.chat-window {
-  display: grid;
-  grid-template-rows: auto auto auto 1fr auto auto;
-}
 
-.chat-messages {
-  max-height: none;
-  min-height: 0;
-}
-
-.chat-input-row {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
-}
 
 @media (min-width: 768px) and (max-width: 1024px) {
   body:not(.embedded-msn) {

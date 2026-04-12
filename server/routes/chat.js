@@ -217,7 +217,7 @@ router.get('/conversations', auth, async (req, res) => {
     JOIN conversation_members cm2 ON cm2.conversation_id = c.id AND cm2.user_id != ?
     JOIN users u ON u.id = cm2.user_id
     WHERE ${IS_GROUP_FALSE_SQL}
-    ORDER BY COALESCE(last_time, 0) DESC, c.id DESC
+    ORDER BY (SELECT sent_at FROM messages WHERE conversation_id = c.id ORDER BY sent_at DESC, id DESC LIMIT 1) DESC NULLS LAST, c.id DESC
   `, [req.user.userId, req.user.userId, req.user.userId]);
 
   return res.json({ ok: true, conversations });
@@ -234,7 +234,7 @@ router.get('/groups', auth, async (req, res) => {
     FROM conversations c
     JOIN conversation_members cm ON cm.conversation_id = c.id AND cm.user_id = ?
     WHERE ${IS_GROUP_TRUE_SQL}
-    ORDER BY COALESCE(last_time, 0) DESC, c.id DESC
+    ORDER BY (SELECT sent_at FROM messages WHERE conversation_id = c.id ORDER BY sent_at DESC, id DESC LIMIT 1) DESC NULLS LAST, c.id DESC
   `, [req.user.userId]);
 
   return res.json({ ok: true, groups });
@@ -401,7 +401,7 @@ router.post('/groups/:conversationId/leave', auth, async (req, res) => {
 router.get('/conversations/:conversationId/messages', auth, async (req, res) => {
   const conversationId = Number(req.params.conversationId);
   const limit = Math.min(Number(req.query.limit) || 50, 100);
-  const before = Number(req.query.before) || 9999999999;
+  const before = Number(req.query.before) || 2147483647;
   const member = await requireConversationMember(conversationId, req.user.userId);
   const group = await getGroup(conversationId);
 
@@ -486,7 +486,7 @@ router.post('/conversations/:conversationId/send-file', auth, async (req, res) =
 router.get('/:friendId/messages', auth, async (req, res) => {
   const friendId = Number(req.params.friendId);
   const limit = Math.min(Number(req.query.limit) || 50, 100);
-  const before = Number(req.query.before) || 9999999999;
+  const before = Number(req.query.before) || 2147483647;
 
   const friendship = await requireAcceptedFriendship(req.user.userId, friendId);
   if (!friendship) {

@@ -19,6 +19,9 @@ let typingTimers = {};
 let webrtcConfig = { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] };
 let activeCalls = new Map();
 const isEmbeddedMode = window.self !== window.top;
+const isTabletViewport = () => window.matchMedia('(min-width: 768px) and (max-width: 1024px)').matches;
+const isMobileViewport = () => window.matchMedia('(max-width: 767px)').matches;
+const isFixedPaneMode = () => isEmbeddedMode || isTabletViewport() || isMobileViewport();
 
 const TYPING_DEBOUNCE = 1500;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -45,6 +48,32 @@ function toast(msg, duration = 3500) {
   el.classList.remove('hidden');
   clearTimeout(toast._t);
   toast._t = setTimeout(() => el.classList.add('hidden'), duration);
+}
+
+function showNetworkBanner(message, tone = 'warn', autoHideMs = 0) {
+  const banner = $('network-banner');
+  if (!banner) return;
+  banner.textContent = message;
+  banner.classList.remove('hidden', 'offline', 'warn');
+  if (tone === 'offline') banner.classList.add('offline');
+  if (tone === 'warn') banner.classList.add('warn');
+  clearTimeout(showNetworkBanner._t);
+  if (autoHideMs > 0) {
+    showNetworkBanner._t = setTimeout(() => banner.classList.add('hidden'), autoHideMs);
+  }
+}
+
+function hideNetworkBanner() {
+  const banner = $('network-banner');
+  if (!banner) return;
+  banner.classList.add('hidden');
+}
+
+function syncResponsiveState() {
+  if (isEmbeddedMode) return;
+  if (!isMobileViewport()) {
+    document.body.classList.remove('mobile-chat-open');
+  }
 }
 
 function statusClass(status) {
@@ -232,12 +261,14 @@ async function startApp() {
   await Promise.all([loadSettings(), loadWebrtcConfig(), loadFriends(), loadGroups(), loadPendingRequests()]);
   connectSocket();
   await restoreOpenConversations();
+  syncResponsiveState();
+  window.addEventListener('resize', syncResponsiveState);
   setInterval(loadPendingRequests, 30000);
   setInterval(loadGroups, 45000);
 }
 
 function activateEmbeddedChat(targetWin) {
-  if (!isEmbeddedMode) return;
+  if (!isFixedPaneMode()) return;
   const chatContainer = $('chat-windows');
   const windows = chatContainer.querySelectorAll('.chat-window');
   windows.forEach((win) => win.classList.toggle('hidden', win !== targetWin));
@@ -604,6 +635,9 @@ async function openConversationWindow(meta) {
       const nextWin = Object.values(chatWindows)[0];
       if (nextWin) activateEmbeddedChat(nextWin);
     }
+    if (!isEmbeddedMode && isMobileViewport()) {
+      document.body.classList.remove('mobile-chat-open');
+    }
   };
 
   win.querySelector('.send-btn').onclick = () => sendTextMessage(meta, win, input);
@@ -637,6 +671,11 @@ async function openConversationWindow(meta) {
   win.querySelector('.call-voice-btn').onclick = () => initiateCall(meta, win, 'voice');
   win.querySelector('.call-video-btn').onclick = () => initiateCall(meta, win, 'video');
   win.querySelector('.end-call-btn').onclick = () => endCallForWindow(win, false);
+  win.querySelector('.mobile-back-btn').onclick = () => {
+    if (!isEmbeddedMode && isMobileViewport()) {
+      document.body.classList.remove('mobile-chat-open');
+    }
+  };
 
   callStrip.classList.add('hidden');
   mediaStage.classList.add('hidden');
@@ -658,10 +697,13 @@ async function openConversationWindow(meta) {
     }
   }
   rememberOpenConversation(meta);
-  if (!isEmbeddedMode) {
+  if (!isFixedPaneMode()) {
     makeDraggable(win, win.querySelector('.chat-titlebar'));
   }
   activateEmbeddedChat(win);
+  if (!isEmbeddedMode && isMobileViewport()) {
+    document.body.classList.add('mobile-chat-open');
+  }
 
   const historyPath = meta.kind === 'direct'
     ? `/api/chat/${meta.targetId}/messages`
@@ -873,6 +915,27 @@ function appendMessage(win, msg, meta) {
 
 function connectSocket() {
   socket = io({ auth: { token: '' }, withCredentials: true });
+
+  socket.on('connect', () => {
+    showNetworkBanner('Connected', '', 1200);
+  });
+
+  socket.on('disconnect', () => {
+    showNetworkBanner('Offline mode: trying to reconnect...', 'offline');
+  });
+
+  socket.on('connect_error', () => {
+    showNetworkBanner('Connection failed. Retrying...', 'offline');
+  });
+
+  if (socket.io) {
+    socket.io.on('reconnect_attempt', () => {
+      showNetworkBanner('Reconnecting...', 'warn');
+    });
+    socket.io.on('reconnect', () => {
+      showNetworkBanner('Reconnected', '', 1200);
+    });
+  }
 
   socket.on('message:new', async (msg) => {
     if (msg.conversation_kind === 'group') {
@@ -1121,7 +1184,9 @@ if (isEmbeddedMode) {
   $('buddy-window').style.left = '';
   $('buddy-window').style.top = '';
 } else {
-  makeDraggable($('buddy-window'), $('buddy-window').querySelector('.msn-titlebar'));
+  if (!isFixedPaneMode()) {
+    makeDraggable($('buddy-window'), $('buddy-window').querySelector('.msn-titlebar'));
+  }
 }
 
 init();

@@ -56,6 +56,8 @@ if (isPG) {
     `ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_name TEXT NOT NULL DEFAULT ''`,
     `ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_type TEXT NOT NULL DEFAULT ''`,
     `ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_data TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_key TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_url TEXT NOT NULL DEFAULT ''`,
     `ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_size INTEGER NOT NULL DEFAULT 0`,
     `CREATE TABLE IF NOT EXISTS user_settings (
       user_id                INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -112,6 +114,8 @@ if (isPG) {
       attachment_name TEXT    NOT NULL DEFAULT '',
       attachment_type TEXT    NOT NULL DEFAULT '',
       attachment_data TEXT    NOT NULL DEFAULT '',
+      attachment_key  TEXT    NOT NULL DEFAULT '',
+      attachment_url  TEXT    NOT NULL DEFAULT '',
       attachment_size INTEGER NOT NULL DEFAULT 0,
       sent_at         INTEGER NOT NULL DEFAULT FLOOR(EXTRACT(EPOCH FROM NOW()))::INTEGER,
       is_read         INTEGER NOT NULL DEFAULT 0
@@ -235,6 +239,8 @@ if (isPG) {
       attachment_name TEXT    NOT NULL DEFAULT '',
       attachment_type TEXT    NOT NULL DEFAULT '',
       attachment_data TEXT    NOT NULL DEFAULT '',
+      attachment_key  TEXT    NOT NULL DEFAULT '',
+      attachment_url  TEXT    NOT NULL DEFAULT '',
       attachment_size INTEGER NOT NULL DEFAULT 0,
       sent_at         INTEGER NOT NULL DEFAULT (strftime('%s','now')),
       is_read         INTEGER NOT NULL DEFAULT 0
@@ -263,6 +269,8 @@ if (isPG) {
       ensureSqliteColumn('messages', 'attachment_name', "TEXT NOT NULL DEFAULT ''");
       ensureSqliteColumn('messages', 'attachment_type', "TEXT NOT NULL DEFAULT ''");
       ensureSqliteColumn('messages', 'attachment_data', "TEXT NOT NULL DEFAULT ''");
+      ensureSqliteColumn('messages', 'attachment_key', "TEXT NOT NULL DEFAULT ''");
+      ensureSqliteColumn('messages', 'attachment_url', "TEXT NOT NULL DEFAULT ''");
       ensureSqliteColumn('messages', 'attachment_size', 'INTEGER NOT NULL DEFAULT 0');
       sqlite.exec('CREATE INDEX IF NOT EXISTS idx_conversations_group ON conversations(is_group)');
       console.log('SQLite schema ready');

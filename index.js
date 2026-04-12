@@ -17,6 +17,8 @@ const {
   getOrCreateConv,
   requireAcceptedFriendship,
   requireConversationMember,
+  canSendDirectFile,
+  canSendGroupFile,
   insertMessage,
   getGroup,
   getGroupMembers,
@@ -27,7 +29,10 @@ const {
 const app = express();
 const server = http.createServer(app);
 
-const JWT_SECRET = process.env.JWT_SECRET || 'change_this_in_production';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-jwt-secret';
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is required in production');
+}
 
 const io = new Server(server, {
   cors: { origin: false },
@@ -38,6 +43,7 @@ const io = new Server(server, {
 app.use(express.json({ limit: '25mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(process.env.LOCAL_STORAGE_PATH || path.join(__dirname, 'data', 'uploads')));
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
@@ -144,6 +150,10 @@ io.on('connection', async (socket) => {
           if (typeof ack === 'function') ack({ ok: false, error: 'ไม่พบกลุ่ม' });
           return;
         }
+        if (msgType === 'file' && !(await canSendGroupFile(uid, conversationId))) {
+          if (typeof ack === 'function') ack({ ok: false, error: 'ผู้ใช้บางคนปิดรับการโอนไฟล์' });
+          return;
+        }
 
         const stored = await insertMessage({
           conversationId,
@@ -163,6 +173,10 @@ io.on('connection', async (socket) => {
       const friendship = await requireAcceptedFriendship(uid, targetUserId);
       if (!friendship) {
         if (typeof ack === 'function') ack({ ok: false, error: 'ต้องเป็นเพื่อนกันก่อนจึงส่งข้อความได้' });
+        return;
+      }
+      if (msgType === 'file' && !(await canSendDirectFile(uid, targetUserId))) {
+        if (typeof ack === 'function') ack({ ok: false, error: 'คุณหรือเพื่อนปิดรับการโอนไฟล์อยู่' });
         return;
       }
 
@@ -187,6 +201,10 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('typing:start', async ({ to_user_id }) => {
+    const friendship = await requireAcceptedFriendship(uid, Number(to_user_id));
+    if (!friendship) {
+      return;
+    }
     const sockets = onlineUsers.get(to_user_id);
     if (sockets) {
       const sender = await db.get('SELECT display_name FROM users WHERE id=?', [uid]);
@@ -194,7 +212,11 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('typing:stop', ({ to_user_id }) => {
+  socket.on('typing:stop', async ({ to_user_id }) => {
+    const friendship = await requireAcceptedFriendship(uid, Number(to_user_id));
+    if (!friendship) {
+      return;
+    }
     const sockets = onlineUsers.get(to_user_id);
     if (sockets) {
       sockets.forEach(sid => io.to(sid).emit('typing:stop', { from_user_id: uid }));

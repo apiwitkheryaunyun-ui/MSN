@@ -40,7 +40,9 @@ router.post('/add', auth, rateLimit({ key: 'friends-add', limit: 25, windowMs: 6
   }
 
   const target = await db.get(`
-    SELECT u.id, COALESCE(s.allow_friend_requests, 1) AS allow_friend_requests
+    SELECT u.id,
+           COALESCE(s.allow_friend_requests, 1) AS allow_friend_requests,
+           COALESCE(s.privacy_mode, 'everyone') AS privacy_mode
     FROM users u
     LEFT JOIN user_settings s ON s.user_id = u.id
     WHERE u.msn_id = ?
@@ -48,6 +50,9 @@ router.post('/add', auth, rateLimit({ key: 'friends-add', limit: 25, windowMs: 6
   if (!target) return res.status(404).json({ error: 'ไม่พบผู้ใช้หมายเลขนี้' });
   if (target.id === req.user.userId) return res.status(400).json({ error: 'ไม่สามารถเพิ่มตัวเองเป็นเพื่อนได้' });
   if (!target.allow_friend_requests) return res.status(403).json({ error: 'ผู้ใช้นี้ปิดรับคำขอเป็นเพื่อน' });
+  if (target.privacy_mode === 'contacts-only') {
+    return res.status(403).json({ error: 'ผู้ใช้นี้เปิดรับเฉพาะรายชื่อเพื่อนเท่านั้น' });
+  }
 
   const existing = await db.get(
     'SELECT id, status FROM friends WHERE (user_id=? AND friend_id=?) OR (user_id=? AND friend_id=?)',

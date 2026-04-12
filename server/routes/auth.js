@@ -11,7 +11,10 @@ const {
 } = require('../validators');
 
 const SALT_ROUNDS = 12;
-const JWT_SECRET = process.env.JWT_SECRET || 'change_this_in_production';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-jwt-secret';
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is required in production');
+}
 const COOKIE_OPTS = {
   httpOnly: true,
   sameSite: 'strict',

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/schema');
 const auth = require('../middleware');
+const { uploadAttachment } = require('../services/objectStorage');
 
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const MESSAGE_TYPES = new Set(['text', 'nudge', 'wink', 'file']);
@@ -104,13 +105,65 @@ function normalizeAttachment(attachment) {
   };
 }
 
+async function getUserSettings(userId) {
+  const row = await db.get('SELECT allow_file_transfer, privacy_mode FROM user_settings WHERE user_id = ?', [userId]);
+  return {
+    allow_file_transfer: row ? Number(row.allow_file_transfer) : 1,
+    privacy_mode: row?.privacy_mode || 'everyone',
+  };
+}
+
+async function canSendDirectFile(fromUserId, toUserId) {
+  const [senderSettings, receiverSettings] = await Promise.all([
+    getUserSettings(fromUserId),
+    getUserSettings(toUserId),
+  ]);
+  return senderSettings.allow_file_transfer && receiverSettings.allow_file_transfer;
+}
+
+async function canSendGroupFile(fromUserId, conversationId) {
+  const senderSettings = await getUserSettings(fromUserId);
+  if (!senderSettings.allow_file_transfer) {
+    return false;
+  }
+
+  const blockedMember = await db.get(
+    `SELECT cm.user_id
+     FROM conversation_members cm
+     LEFT JOIN user_settings s ON s.user_id = cm.user_id
+     WHERE cm.conversation_id = ?
+       AND COALESCE(s.allow_file_transfer, 1) = 0
+     LIMIT 1`,
+    [conversationId]
+  );
+
+  return !blockedMember;
+}
+
 async function insertMessage({ conversationId, senderId, content, msgType, attachment }) {
   const normalizedAttachment = normalizeAttachment(attachment);
+  let attachmentKey = '';
+  let attachmentUrl = '';
+  let attachmentData = '';
+
+  if (msgType === 'file' && normalizedAttachment.attachment_data) {
+    const stored = await uploadAttachment({
+      name: normalizedAttachment.attachment_name,
+      type: normalizedAttachment.attachment_type,
+      data: normalizedAttachment.attachment_data,
+      size: normalizedAttachment.attachment_size,
+    });
+    attachmentKey = stored?.key || '';
+    attachmentUrl = stored?.url || '';
+  } else {
+    attachmentData = normalizedAttachment.attachment_data;
+  }
+
   const result = await db.run(
     `INSERT INTO messages (
       conversation_id, sender_id, content, msg_type,
-      attachment_name, attachment_type, attachment_data, attachment_size
-    ) VALUES (?,?,?,?,?,?,?,?)`,
+      attachment_name, attachment_type, attachment_data, attachment_key, attachment_url, attachment_size
+    ) VALUES (?,?,?,?,?,?,?,?,?,?)`,
     [
       conversationId,
       senderId,
@@ -118,14 +171,16 @@ async function insertMessage({ conversationId, senderId, content, msgType, attac
       msgType,
       normalizedAttachment.attachment_name,
       normalizedAttachment.attachment_type,
-      normalizedAttachment.attachment_data,
+      attachmentData,
+      attachmentKey,
+      attachmentUrl,
       normalizedAttachment.attachment_size,
     ]
   );
 
   return db.get(
     `SELECT m.id, m.conversation_id, m.sender_id, m.content, m.msg_type, m.sent_at, m.is_read,
-            m.attachment_name, m.attachment_type, m.attachment_data, m.attachment_size,
+            m.attachment_name, m.attachment_type, m.attachment_data, m.attachment_key, m.attachment_url, m.attachment_size,
             u.display_name AS sender_name, u.avatar_url AS sender_avatar
      FROM messages m
      JOIN users u ON u.id = m.sender_id
@@ -356,7 +411,7 @@ router.get('/conversations/:conversationId/messages', auth, async (req, res) => 
 
   const messages = (await db.all(`
     SELECT m.id, m.sender_id, m.content, m.msg_type, m.sent_at, m.is_read,
-           m.attachment_name, m.attachment_type, m.attachment_data, m.attachment_size,
+        m.attachment_name, m.attachment_type, m.attachment_data, m.attachment_key, m.attachment_url, m.attachment_size,
            u.display_name AS sender_name, u.avatar_url AS sender_avatar
     FROM messages m
     JOIN users u ON u.id = m.sender_id
@@ -409,6 +464,9 @@ router.post('/conversations/:conversationId/send-file', auth, async (req, res) =
   if (!member || !group) {
     return res.status(404).json({ error: 'ไม่พบกลุ่ม' });
   }
+  if (!(await canSendGroupFile(req.user.userId, conversationId))) {
+    return res.status(403).json({ error: 'ผู้ใช้บางคนปิดรับการโอนไฟล์' });
+  }
 
   try {
     const inserted = await insertMessage({
@@ -438,7 +496,7 @@ router.get('/:friendId/messages', auth, async (req, res) => {
   const conversationId = await getOrCreateConv(req.user.userId, friendId);
   const messages = (await db.all(`
     SELECT m.id, m.sender_id, m.content, m.msg_type, m.sent_at, m.is_read,
-           m.attachment_name, m.attachment_type, m.attachment_data, m.attachment_size,
+        m.attachment_name, m.attachment_type, m.attachment_data, m.attachment_key, m.attachment_url, m.attachment_size,
            u.display_name AS sender_name, u.avatar_url AS sender_avatar
     FROM messages m
     JOIN users u ON u.id = m.sender_id
@@ -491,6 +549,9 @@ router.post('/:friendId/send-file', auth, async (req, res) => {
   if (!friendship) {
     return res.status(403).json({ error: 'ต้องเป็นเพื่อนกันก่อนจึงส่งไฟล์ได้' });
   }
+  if (!(await canSendDirectFile(req.user.userId, friendId))) {
+    return res.status(403).json({ error: 'คุณหรือเพื่อนปิดรับการโอนไฟล์อยู่' });
+  }
 
   try {
     const conversationId = await getOrCreateConv(req.user.userId, friendId);
@@ -516,6 +577,9 @@ module.exports = {
   insertMessage,
   getGroup,
   getGroupMembers,
+  getUserSettings,
+  canSendDirectFile,
+  canSendGroupFile,
   mapMessageForDirect,
   mapMessageForGroup,
   MAX_ATTACHMENT_BYTES,

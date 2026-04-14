@@ -32,9 +32,18 @@
         <input id="login-password" type="password" autocomplete="current-password" placeholder="*******" />
       </div>
       <div class="legacy-login-options">
-        <label><input type="checkbox" />Remember me</label>
-        <label><input type="checkbox" />Remember my password</label>
-        <label><input type="checkbox" />Sign me in automatically</label>
+        <div class="legacy-check-row">
+          <input type="checkbox" id="legacy-remember-me" />
+          <label for="legacy-remember-me">Remember me</label>
+        </div>
+        <div class="legacy-check-row">
+          <input type="checkbox" id="legacy-remember-password" />
+          <label for="legacy-remember-password">Remember my password</label>
+        </div>
+        <div class="legacy-check-row">
+          <input type="checkbox" id="legacy-auto-signin" />
+          <label for="legacy-auto-signin">Sign me in automatically</label>
+        </div>
       </div>
       <div class="form-actions">
         <button id="login-btn" class="legacy-login-btn" type="button">login</button>

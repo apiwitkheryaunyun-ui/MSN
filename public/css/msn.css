@@ -1117,6 +1117,64 @@ body.embedded-msn .embedded-close-btn {
   font-weight: 700;
 }
 
+/* Embedded desktop mode: keep iframe context but allow floating/draggable windows */
+body.embedded-msn.embedded-desktop {
+  overflow: hidden;
+}
+
+body.embedded-msn.embedded-desktop .embedded-msn-app {
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+
+body.embedded-msn.embedded-desktop .buddy-window {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  width: 280px;
+  height: calc(100% - 28px);
+  min-height: 0;
+  max-height: none;
+  border: 1px solid #8eaed8;
+  border-radius: 4px;
+  box-shadow: 0 8px 20px rgba(5, 40, 105, .2);
+}
+
+body.embedded-msn.embedded-desktop #chat-windows {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+}
+
+body.embedded-msn.embedded-desktop .chat-window {
+  position: fixed;
+  inset: auto;
+  width: 420px;
+  min-height: 380px;
+  max-height: calc(100% - 36px);
+  height: auto;
+  border: 1px solid rgba(130, 174, 225, .82);
+  border-radius: 6px 6px 4px 4px;
+  box-shadow: 0 10px 28px rgba(5, 40, 105, .25), inset 0 1px 0 rgba(255,255,255,.65);
+  resize: both;
+}
+
+body.embedded-msn.embedded-desktop .prompt-studio-window {
+  position: fixed;
+  inset: 22px 20px 20px 308px;
+  width: auto;
+  height: auto;
+  border: 1px solid rgba(130, 174, 225, .82);
+  border-radius: 6px;
+  box-shadow: 0 10px 28px rgba(5, 40, 105, .25), inset 0 1px 0 rgba(255,255,255,.65);
+}
+
+body.embedded-msn.embedded-desktop .msn-titlebar,
+body.embedded-msn.embedded-desktop .chat-titlebar {
+  display: flex;
+}
+
 @media (max-width: 760px) {
   .embedded-msn-app {
     grid-template-columns: 1fr;
@@ -2444,41 +2502,56 @@ body.legacy-msn .legacy-auth-panel.active {
 }
 
 body.legacy-msn .legacy-auth-panel .form-row {
-  margin-bottom: 16px;
+  margin-bottom: 22px;
 }
 
 body.legacy-msn .legacy-auth-panel .form-row label {
-  font-size: 24px;
-  font-family: 'Open Sans', 'Segoe UI', sans-serif;
+  font-size: 22px;
+  font-family: inherit;
   color: #001e33;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   font-weight: 400;
 }
 
 body.legacy-msn .legacy-auth-panel .form-row input {
-  height: 28px;
+  height: 30px;
   border: 1px solid #c5c5c5;
   border-radius: 0;
   background: #ffffff;
   box-shadow: none;
-  font-size: 23px;
+  font-size: 20px;
+  font-family: inherit;
   padding: 2px 8px;
 }
 
 body.legacy-msn .legacy-login-options {
   margin-top: 6px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   color: #001f33;
-  font-size: 24px;
-  font-family: 'Open Sans', 'Segoe UI', sans-serif;
+  font-size: 22px;
+  font-family: inherit;
+}
+
+body.legacy-msn .legacy-check-row {
+  display: flex;
+  align-items: center;
+}
+
+body.legacy-msn .legacy-login-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: inherit;
+  line-height: 1.15;
+  cursor: pointer;
 }
 
 body.legacy-msn .legacy-login-options input[type='checkbox'] {
-  margin-right: 8px;
-  transform: translateY(2px) scale(1.2);
+  margin: 0;
+  transform: none;
 }
 
 body.legacy-msn .legacy-auth-panel .form-actions {
@@ -2493,8 +2566,8 @@ body.legacy-msn .legacy-login-btn {
   background: #f0f0f0;
   box-shadow: inset 0 1px 2px #fff, inset 0 -0.7em #ddd;
   padding: 3px 14px;
-  font-size: 24px;
-  font-family: 'Open Sans', 'Segoe UI', sans-serif;
+  font-size: 20px;
+  font-family: inherit;
 }
 
 body.legacy-msn .legacy-login-btn:hover {
@@ -2512,13 +2585,21 @@ body.legacy-msn .legacy-link-btn {
   background: transparent;
   color: #001f33;
   padding: 0;
-  font-size: 24px;
-  font-family: 'Open Sans', 'Segoe UI', sans-serif;
+  font-size: 20px;
+  font-family: inherit;
   cursor: pointer;
+  outline: none;
 }
 
 body.legacy-msn .legacy-link-btn:hover {
   text-decoration: underline;
+}
+
+body.legacy-msn .legacy-link-btn:focus,
+body.legacy-msn .legacy-link-btn:active {
+  outline: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 body.legacy-msn .auth-error {
@@ -2532,11 +2613,11 @@ body.legacy-msn .auth-error {
   body.legacy-msn .legacy-login-options,
   body.legacy-msn .legacy-login-btn,
   body.legacy-msn .legacy-link-btn {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   body.legacy-msn .legacy-auth-panel .form-row input {
-    font-size: 16px;
+    font-size: 15px;
     height: 34px;
   }
 }

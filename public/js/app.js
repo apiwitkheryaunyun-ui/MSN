@@ -22,8 +22,9 @@ let contactSearchQuery = '';
 const isEmbeddedMode = window.self !== window.top;
 const isTabletViewport = () => window.matchMedia('(min-width: 768px) and (max-width: 1024px)').matches;
 const isMobileViewport = () => window.matchMedia('(max-width: 767px)').matches;
-const isFixedPaneMode = () => isEmbeddedMode || isTabletViewport() || isMobileViewport();
-const isPaneSwitching = () => isMobileViewport() || (isEmbeddedMode && window.matchMedia('(max-width: 760px)').matches);
+const isEmbeddedCompact = () => isEmbeddedMode && window.matchMedia('(max-width: 760px)').matches;
+const isFixedPaneMode = () => isTabletViewport() || isMobileViewport() || isEmbeddedCompact();
+const isPaneSwitching = () => isMobileViewport() || isEmbeddedCompact();
 
 const TYPING_DEBOUNCE = 1500;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -339,6 +340,9 @@ function hideNetworkBanner() {
 }
 
 function syncResponsiveState() {
+  if (isEmbeddedMode) {
+    document.body.classList.toggle('embedded-desktop', !isEmbeddedCompact());
+  }
   if (!isPaneSwitching()) {
     document.body.classList.remove('mobile-chat-open');
   }
@@ -1644,14 +1648,9 @@ function makeDraggable(win, handle) {
   });
 }
 
-if (isEmbeddedMode) {
-  $('buddy-window').style.left = '';
-  $('buddy-window').style.top = '';
-} else {
-  if (!isFixedPaneMode()) {
-    makeDraggable($('buddy-window'), $('buddy-window').querySelector('.msn-titlebar'));
-    if (promptStudioWindow) makeDraggable(promptStudioWindow, promptStudioWindow.querySelector('.prompt-studio-titlebar'));
-  }
+if (!isFixedPaneMode()) {
+  makeDraggable($('buddy-window'), $('buddy-window').querySelector('.msn-titlebar'));
+  if (promptStudioWindow) makeDraggable(promptStudioWindow, promptStudioWindow.querySelector('.prompt-studio-titlebar'));
 }
 
 init();

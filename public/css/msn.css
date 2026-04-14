@@ -344,6 +344,20 @@ body button::after {
   flex-shrink: 0;
 }
 
+.legacy-first-section {
+  min-height: 94px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.1) 0%, transparent 34%),
+    url('../img/legacy/bluemetal.jpg') center/cover no-repeat;
+}
+
+.legacy-tagline {
+  margin-top: 2px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, .92);
+  text-shadow: 0 1px 1px rgba(0,0,0,.5);
+}
+
 .avatar-wrapper { position: relative; width: 44px; height: 44px; }
 .avatar-img {
   width: 44px; height: 44px;
@@ -442,6 +456,43 @@ body button::after {
   background: linear-gradient(180deg, #ab1c1c 0%, #d04848 58%, #ffaaaa 100%);
 }
 
+.legacy-misc-menu {
+  height: 32px;
+  background: #ffffff;
+  border-bottom: 1px solid #8db2d8;
+  position: relative;
+  padding: 0 8px;
+}
+
+.legacy-misc-menu ul,
+.legacy-misc-menu li {
+  list-style: none;
+  display: inline-block;
+}
+
+.legacy-misc-menu .left {
+  float: left;
+}
+
+.legacy-misc-menu .right {
+  float: right;
+}
+
+.legacy-misc-menu li {
+  margin: 5px 4px 0;
+}
+
+.legacy-misc-menu li span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.legacy-misc-menu li img {
+  width: 16px;
+  height: 16px;
+}
+
 /* Add contact */
 .add-friend-bar {
   display: flex; gap: 4px;
@@ -461,6 +512,58 @@ body button::after {
   box-shadow: inset 1px 1px 0 rgba(255,255,255,.6);
 }
 .add-friend-bar input:focus { border-color: #4090d8 #0060b8 #0060b8 #4090d8; outline: none; }
+
+.legacy-search-bar {
+  align-items: center;
+  box-shadow: inset 0 8px 8px -8px #696868;
+}
+
+.legacy-search-bar .part {
+  display: flex;
+  align-items: center;
+}
+
+.legacy-search-bar .search-part {
+  flex: 1;
+}
+
+.legacy-search-bar .buttons-part ul,
+.legacy-search-bar .buttons-part li {
+  list-style: none;
+  display: inline-block;
+}
+
+.legacy-add-id-row {
+  border-top: 1px solid rgba(120, 155, 194, .55);
+  background: linear-gradient(180deg, #d7e8f8 0%, #cddff3 100%);
+}
+
+.legacy-icon-btn {
+  width: 28px;
+  height: 24px;
+  border: 1px solid #90b0d8;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #f7fbff 0%, #dce9fb 100%);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+.legacy-icon-btn:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #e7f2ff 100%);
+}
+
+.legacy-icon-btn:active {
+  background: linear-gradient(180deg, #c3d7f2 0%, #e8f2ff 100%);
+}
+
+.legacy-icon-btn img {
+  width: 16px;
+  height: 16px;
+}
 
 /* Contacts area */
 .contacts-area {

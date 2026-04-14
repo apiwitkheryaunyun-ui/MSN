@@ -85,8 +85,10 @@
       </div>
     </div>
 
-    <!-- My profile bar -->
-    <div class="my-profile-bar">
+    <input type="hidden" id="user-id" name="user-id" />
+
+    <!-- MSN-master style profile header -->
+    <section class="my-profile-bar first-section vista legacy-first-section">
       <div class="avatar-wrapper" id="my-avatar-wrap">
         <img id="my-avatar" src="img/default-avatar.png" alt="avatar" class="avatar-img" />
         <label class="avatar-upload-btn" title="Change avatar">
@@ -97,6 +99,7 @@
       <div class="my-info">
         <div class="my-name" id="my-display-name" contenteditable="true" spellcheck="false">Loading...</div>
         <div class="my-status-msg" id="my-status-msg" contenteditable="true" spellcheck="false">What's your personal message?</div>
+        <p class="legacy-tagline">Keep the chat alive.</p>
       </div>
       <div class="my-status-selector">
         <select id="status-select">
@@ -107,7 +110,20 @@
           <option value="appear offline">⚫ Appear Offline</option>
         </select>
       </div>
-    </div>
+    </section>
+
+    <section class="misc-menu vista legacy-misc-menu">
+      <ul class="left">
+        <li><span><img src="img/legacy/email.gif" alt="mail" /></span></li>
+        <li><span><img src="img/legacy/ppl.png" alt="contacts" /></span></li>
+        <li><span><img src="img/legacy/kdict.png" alt="search" /></span></li>
+        <li><span><img src="img/legacy/msn_phone.png" alt="phone" /></span></li>
+      </ul>
+      <ul class="right">
+        <li><span><img src="img/legacy/brush.png" alt="theme" /></span></li>
+        <li><span><img src="img/legacy/settings.png" alt="settings" /></span></li>
+      </ul>
+    </section>
 
     <!-- My MSN ID display -->
     <div class="id-bar">
@@ -118,10 +134,26 @@
       <button class="logout-link-btn" id="toolbar-logout-btn" type="button" title="Log out">Log out</button>
     </div>
 
-    <!-- Add friend bar -->
-    <div class="add-friend-bar">
+    <div class="add-friend-bar search-bar legacy-search-bar">
+      <div class="part search-part">
+        <input id="contact-search-input" type="text" placeholder="Find a contact..." />
+      </div>
+      <div class="part buttons-part">
+        <ul>
+          <li>
+            <button id="refresh-contacts-btn" class="legacy-icon-btn" title="Refresh contacts" type="button">
+              <img src="img/legacy/refresh.jpg" alt="refresh" />
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="add-friend-bar legacy-add-id-row">
       <input id="add-contact-input" type="text" maxlength="10" placeholder="Enter 10-digit MSN ID to add..." />
-      <button id="add-contact-btn" class="msn-btn small">Add</button>
+      <button id="add-contact-btn" class="legacy-icon-btn" title="Add contact" type="button">
+        <img src="img/legacy/add.jpg" alt="add" />
+      </button>
     </div>
 
     <div id="settings-panel" class="settings-panel hidden">

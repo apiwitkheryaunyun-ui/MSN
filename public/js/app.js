@@ -18,6 +18,7 @@ let chatWindows = {};
 let typingTimers = {};
 let webrtcConfig = { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] };
 let activeCalls = new Map();
+let contactSearchQuery = '';
 const isEmbeddedMode = window.self !== window.top;
 const isTabletViewport = () => window.matchMedia('(min-width: 768px) and (max-width: 1024px)').matches;
 const isMobileViewport = () => window.matchMedia('(max-width: 767px)').matches;
@@ -477,6 +478,26 @@ function escHtml(value) {
     .replace(/'/g, '&#x27;');
 }
 
+function normalizeSearchText(value) {
+  return String(value || '').toLowerCase().trim();
+}
+
+function matchesContactSearch(friend) {
+  if (!contactSearchQuery) return true;
+  const haystack = [friend.display_name, friend.username, friend.msn_id, friend.status_msg]
+    .map(normalizeSearchText)
+    .join(' ');
+  return haystack.includes(contactSearchQuery);
+}
+
+function matchesGroupSearch(group) {
+  if (!contactSearchQuery) return true;
+  const haystack = [group.title, group.last_msg]
+    .map(normalizeSearchText)
+    .join(' ');
+  return haystack.includes(contactSearchQuery);
+}
+
 async function api(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
@@ -791,6 +812,7 @@ function renderFriends() {
   offlineEl.innerHTML = '';
 
   friends.forEach((friend) => {
+    if (!matchesContactSearch(friend)) return;
     const item = document.createElement('div');
     item.className = 'contact-item';
     item.innerHTML = `
@@ -835,6 +857,23 @@ $('add-contact-btn').onclick = addContact;
 $('add-contact-input').addEventListener('keydown', (event) => {
   if (event.key === 'Enter') addContact();
 });
+
+const contactSearchInput = $('contact-search-input');
+if (contactSearchInput) {
+  contactSearchInput.addEventListener('input', (event) => {
+    contactSearchQuery = normalizeSearchText(event.target.value);
+    renderGroups();
+    renderFriends();
+  });
+}
+
+const refreshContactsBtn = $('refresh-contacts-btn');
+if (refreshContactsBtn) {
+  refreshContactsBtn.onclick = async () => {
+    await Promise.all([loadFriends(), loadGroups(), loadPendingRequests()]);
+    toast('รีเฟรชรายชื่อแล้ว');
+  };
+}
 
 async function loadPendingRequests() {
   const data = await api('GET', '/api/friends/requests');
@@ -888,6 +927,7 @@ function renderGroups() {
   const list = $('groups-list');
   list.innerHTML = '';
   groups.forEach((group) => {
+    if (!matchesGroupSearch(group)) return;
     const groupTitle = (group.title || '').trim() || `Group #${group.id}`;
     const item = document.createElement('div');
     item.className = 'contact-item group-item';

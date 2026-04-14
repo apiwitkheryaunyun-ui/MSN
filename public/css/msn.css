@@ -1992,6 +1992,131 @@ body {
   background: linear-gradient(180deg, #fff4df 0%, #ffe8bf 100%);
 }
 
+/* Legacy chat skin inspired by MSN-master/chat.html */
+.chat-window.legacy-chat-window {
+  width: 392px;
+  min-height: 410px;
+  border-radius: 4px;
+}
+
+.chat-window.legacy-chat-window .chat-titlebar {
+  border-radius: 4px 4px 0 0;
+}
+
+.chat-window.legacy-chat-window .chat-header-bar.legacy-chat-header {
+  min-height: 86px;
+  align-items: center;
+  background: linear-gradient(180deg, #a0d8ef 0%, #ddf1f9 65%, #feffff 100%);
+  border-top: 1px solid rgba(255,255,255,.65);
+  border-bottom: 1px solid #9ab8d8;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
+  gap: 6px;
+}
+
+.chat-window.legacy-chat-window .legacy-chat-header .avatar-part {
+  width: 58px;
+  display: flex;
+  justify-content: center;
+}
+
+.chat-window.legacy-chat-window .legacy-chat-header .chat-partner-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 2px;
+  border: 1px solid #88a8ca;
+}
+
+.chat-window.legacy-chat-window .legacy-chat-header .info-part {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.chat-window.legacy-chat-window .chat-partner-display {
+  color: #19375b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chat-window.legacy-chat-window .chat-partner-status {
+  color: #4f6078;
+  font-size: 10px;
+}
+
+.chat-window.legacy-chat-window .chat-header-actions {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.chat-window.legacy-chat-window .chat-messages {
+  background: #ffffff;
+  border-top: 1px solid #d5dde8;
+  border-bottom: 1px solid #d5dde8;
+  gap: 4px;
+  padding: 8px;
+}
+
+.chat-window.legacy-chat-window .msg-row {
+  max-width: 92%;
+}
+
+.chat-window.legacy-chat-window .msg-sender {
+  font-size: 10px;
+  color: #2f5585;
+}
+
+.chat-window.legacy-chat-window .msg-bubble {
+  background: #ffffff;
+  border: 1px solid #c7d3e2;
+  border-radius: 3px;
+  box-shadow: none;
+  color: #1a1a1a;
+  padding: 5px 8px;
+}
+
+.chat-window.legacy-chat-window .msg-row.mine .msg-bubble,
+.chat-window.legacy-chat-window .msg-row.theirs .msg-bubble {
+  border-radius: 3px;
+}
+
+.chat-window.legacy-chat-window .msg-row.mine .msg-bubble::after,
+.chat-window.legacy-chat-window .msg-row.theirs .msg-bubble::after {
+  display: none;
+}
+
+.chat-window.legacy-chat-window .chat-toolbar,
+.chat-window.legacy-chat-window .chat-input-row {
+  background: #ffffff;
+  border-top: 1px solid #ccd6e2;
+}
+
+.chat-window.legacy-chat-window .chat-tool-btn {
+  border: 1px solid #a7b8cc;
+  background: linear-gradient(180deg, #f8f8f8 0%, #e4e4e4 100%);
+}
+
+.chat-window.legacy-chat-window .chat-input {
+  border: 1px solid #b8c5d4;
+  border-radius: 0;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.08);
+  background: #ffffff;
+}
+
+.chat-window.legacy-chat-window .send-btn {
+  color: #1b1b1b;
+  text-shadow: none;
+  font-weight: 600;
+  border-color: #a9a9a9;
+  background: linear-gradient(180deg, #f3f3f3 50%, #d6d6d6 50%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.chat-window.legacy-chat-window .send-btn:hover {
+  border-color: #3c7fb1;
+  background: linear-gradient(180deg, #f6fbff 50%, #bee6fd 50%);
+}
+
 
 
 @media (min-width: 768px) and (max-width: 1024px) {
@@ -2126,5 +2251,292 @@ body {
 
   body:not(.embedded-msn) .prompt-studio-window {
     z-index: 360;
+  }
+}
+
+/* Legacy MSN-master 1:1 visual mode */
+body.legacy-msn {
+  background: url('../img/legacy/bg.jpg') center/cover no-repeat fixed;
+}
+
+body.legacy-msn .buddy-window {
+  width: 328px;
+  min-height: 560px;
+  max-height: calc(100vh - 28px);
+  top: 14px;
+  left: 14px;
+  border-radius: 0;
+  border: 1px solid #93a9be;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  background: #ffffff;
+}
+
+body.legacy-msn .my-profile-bar.first-section {
+  min-height: 100px;
+  background: url('../img/legacy/bluemetal.jpg') center/cover no-repeat;
+  border-bottom: 1px solid #7f99b6;
+}
+
+body.legacy-msn .my-profile-bar .my-name,
+body.legacy-msn .my-profile-bar .my-status-msg,
+body.legacy-msn .my-profile-bar .legacy-tagline {
+  color: #ffffff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+}
+
+body.legacy-msn .legacy-misc-menu {
+  height: 30px;
+  background: #ffffff;
+  border-bottom: 1px solid #c7d3e2;
+}
+
+body.legacy-msn .id-bar,
+body.legacy-msn .group-bar,
+body.legacy-msn .settings-panel,
+body.legacy-msn .requests-section,
+body.legacy-msn .group-composer {
+  background: #ffffff;
+}
+
+body.legacy-msn .legacy-search-bar,
+body.legacy-msn .legacy-add-id-row {
+  background: #ffffff;
+  border-bottom: 1px solid #d8dee7;
+  border-top: 0;
+  box-shadow: inset 0 8px 8px -8px #696868;
+}
+
+body.legacy-msn .contacts-area {
+  background: #ffffff;
+}
+
+body.legacy-msn .section-header {
+  background: linear-gradient(180deg, #5e8dd8 0%, #3a6ebf 100%);
+  border-top: 1px solid #88aee9;
+  border-bottom: 1px solid #2f5da0;
+}
+
+body.legacy-msn .contact-item {
+  border-radius: 0;
+  margin: 0;
+  padding: 3px 6px;
+}
+
+body.legacy-msn .contact-item:hover {
+  background: #d6f1ff;
+  border-color: transparent;
+}
+
+body.legacy-msn .chat-window.legacy-chat-window {
+  width: 410px;
+  min-height: 455px;
+  border-radius: 0;
+  border: 1px solid #93a9be;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  background: #ffffff;
+}
+
+body.legacy-msn .chat-window.legacy-chat-window .chat-titlebar {
+  border-radius: 0;
+}
+
+body.legacy-msn .chat-window.legacy-chat-window .chat-header-bar.legacy-chat-header {
+  min-height: 86px;
+  background: linear-gradient(to bottom, #a0d8ef 0%, #ddf1f9 65%, #feffff 100%);
+  border-bottom: 1px solid #c7d3e2;
+  box-shadow: none;
+}
+
+body.legacy-msn .chat-window.legacy-chat-window .chat-header-actions {
+  align-self: center;
+}
+
+body.legacy-msn .chat-window.legacy-chat-window .chat-messages {
+  background: #ffffff;
+  border-top: 0;
+  border-bottom: 1px solid #d2dae5;
+  box-shadow: none;
+}
+
+body.legacy-msn .chat-window.legacy-chat-window .msg-sender {
+  color: #24517f;
+}
+
+body.legacy-msn .chat-window.legacy-chat-window .msg-bubble {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+body.legacy-msn .chat-window.legacy-chat-window .msg-time {
+  color: #6f8093;
+}
+
+body.legacy-msn .chat-window.legacy-chat-window .chat-toolbar,
+body.legacy-msn .chat-window.legacy-chat-window .chat-input-row {
+  background: #ffffff;
+  border-top: 1px solid #d2dae5;
+}
+
+body.legacy-msn .chat-window.legacy-chat-window .chat-tool-btn,
+body.legacy-msn .chat-window.legacy-chat-window .chat-mini-btn,
+body.legacy-msn .chat-window.legacy-chat-window .send-btn {
+  border: 1px solid #8f9cab;
+  border-radius: 0;
+  background: linear-gradient(180deg, #f4f4f4 50%, #d8d8d8 50%);
+  color: #1b1b1b;
+  text-shadow: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
+}
+
+body.legacy-msn .chat-window.legacy-chat-window .send-btn:hover {
+  border-color: #3c7fb1;
+  background: linear-gradient(180deg, #eaf6fd 50%, #bee6fd 50%);
+}
+
+body.legacy-msn .chat-window.legacy-chat-window .chat-input {
+  border: 1px solid #b8c5d4;
+  border-radius: 0;
+}
+
+body.legacy-msn .auth-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 48px;
+  background: linear-gradient(180deg, #48a8da 0%, #bfe4f8 100%);
+}
+
+body.legacy-msn .legacy-auth-box {
+  width: min(980px, calc(100vw - 60px));
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+body.legacy-msn .legacy-auth-hero {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 28px;
+}
+
+body.legacy-msn .legacy-auth-avatar {
+  width: 128px;
+  height: 128px;
+}
+
+body.legacy-msn .auth-logo,
+body.legacy-msn .auth-subtitle {
+  display: none;
+}
+
+body.legacy-msn .legacy-auth-panel {
+  display: none;
+}
+
+body.legacy-msn .legacy-auth-panel.active {
+  display: block;
+}
+
+body.legacy-msn .legacy-auth-panel .form-row {
+  margin-bottom: 16px;
+}
+
+body.legacy-msn .legacy-auth-panel .form-row label {
+  font-size: 24px;
+  font-family: 'Open Sans', 'Segoe UI', sans-serif;
+  color: #001e33;
+  margin-bottom: 4px;
+  font-weight: 400;
+}
+
+body.legacy-msn .legacy-auth-panel .form-row input {
+  height: 28px;
+  border: 1px solid #c5c5c5;
+  border-radius: 0;
+  background: #ffffff;
+  box-shadow: none;
+  font-size: 23px;
+  padding: 2px 8px;
+}
+
+body.legacy-msn .legacy-login-options {
+  margin-top: 6px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #001f33;
+  font-size: 24px;
+  font-family: 'Open Sans', 'Segoe UI', sans-serif;
+}
+
+body.legacy-msn .legacy-login-options input[type='checkbox'] {
+  margin-right: 8px;
+  transform: translateY(2px) scale(1.2);
+}
+
+body.legacy-msn .legacy-auth-panel .form-actions {
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+body.legacy-msn .legacy-login-btn {
+  cursor: pointer;
+  border: 1px solid #707070;
+  border-radius: 4px;
+  background: #f0f0f0;
+  box-shadow: inset 0 1px 2px #fff, inset 0 -0.7em #ddd;
+  padding: 3px 14px;
+  font-size: 24px;
+  font-family: 'Open Sans', 'Segoe UI', sans-serif;
+}
+
+body.legacy-msn .legacy-login-btn:hover {
+  background: #eaf6fd;
+  border-color: #3c7fb1;
+  box-shadow: inset 0 1px 2px #fff, inset 0 -0.7em #bee6fd, 0 0 3px #a7d9f5;
+}
+
+body.legacy-msn .legacy-auth-links {
+  margin-top: 10px;
+}
+
+body.legacy-msn .legacy-link-btn {
+  border: 0;
+  background: transparent;
+  color: #001f33;
+  padding: 0;
+  font-size: 24px;
+  font-family: 'Open Sans', 'Segoe UI', sans-serif;
+  cursor: pointer;
+}
+
+body.legacy-msn .legacy-link-btn:hover {
+  text-decoration: underline;
+}
+
+body.legacy-msn .auth-error {
+  min-height: 22px;
+  margin-top: 8px;
+  font-size: 22px;
+}
+
+@media (max-width: 1024px) {
+  body.legacy-msn .legacy-auth-panel .form-row label,
+  body.legacy-msn .legacy-login-options,
+  body.legacy-msn .legacy-login-btn,
+  body.legacy-msn .legacy-link-btn {
+    font-size: 16px;
+  }
+
+  body.legacy-msn .legacy-auth-panel .form-row input {
+    font-size: 16px;
+    height: 34px;
   }
 }

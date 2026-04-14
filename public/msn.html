@@ -10,58 +10,64 @@
   <link rel="stylesheet" href="vendor/7.css/7.css" />
   <link rel="stylesheet" href="css/msn.css" />
 </head>
-<body>
+<body class="legacy-msn">
 
 <!-- ═══════════════════════════════════════════
      AUTH SCREEN
 ═══════════════════════════════════════════ -->
 <div id="auth-screen" class="auth-screen">
-  <div class="auth-box">
-    <div class="auth-logo">
-      <div class="butterfly-logo"></div>
-      <span class="msn-brand">MSN<sup>®</sup> Messenger</span>
+  <div class="auth-box legacy-auth-box">
+    <div class="legacy-auth-hero" aria-hidden="true">
+      <img class="legacy-auth-avatar" src="img/legacy/DefaultUserPicture.png" alt="" />
     </div>
 
     <!-- LOGIN FORM -->
-    <div id="login-panel" class="auth-panel active">
-      <p class="auth-subtitle">Sign in to start</p>
+    <div id="login-panel" class="auth-panel active legacy-auth-panel">
       <div class="form-row">
         <label>E-mail address:</label>
-        <input id="login-email" type="email" autocomplete="email" placeholder="yourname@example.com" />
+        <input id="login-email" type="email" autocomplete="email" placeholder="johndoe@johndoe.com" />
       </div>
       <div class="form-row">
         <label>Password:</label>
-        <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" />
+        <input id="login-password" type="password" autocomplete="current-password" placeholder="*******" />
+      </div>
+      <div class="legacy-login-options">
+        <label><input type="checkbox" />Remember me</label>
+        <label><input type="checkbox" />Remember my password</label>
+        <label><input type="checkbox" />Sign me in automatically</label>
       </div>
       <div class="form-actions">
-        <button id="login-btn" class="msn-btn primary">Sign In</button>
-        <button id="goto-register" class="msn-btn">Create Account</button>
+        <button id="login-btn" class="legacy-login-btn" type="button">login</button>
+      </div>
+      <div class="legacy-auth-links">
+        <button id="goto-register" class="legacy-link-btn" type="button">Sign up</button>
       </div>
       <p id="login-error" class="auth-error"></p>
     </div>
 
     <!-- REGISTER FORM -->
-    <div id="register-panel" class="auth-panel">
-      <p class="auth-subtitle">Create a new account</p>
+    <div id="register-panel" class="auth-panel legacy-auth-panel">
       <div class="form-row">
         <label>Username:</label>
-        <input id="reg-username" type="text" placeholder="a-z, 0-9, _ (3-30 chars)" />
+        <input id="reg-username" type="text" placeholder="johndoe" />
       </div>
       <div class="form-row">
         <label>Display Name:</label>
-        <input id="reg-display" type="text" placeholder="Your name on MSN" />
+        <input id="reg-display" type="text" placeholder="John Doe" />
       </div>
       <div class="form-row">
         <label>E-mail:</label>
-        <input id="reg-email" type="email" placeholder="yourname@example.com" />
+        <input id="reg-email" type="email" placeholder="johndoe@johndoe.com" />
       </div>
       <div class="form-row">
         <label>Password:</label>
-        <input id="reg-password" type="password" placeholder="Min 8 characters" />
+        <input id="reg-password" type="password" placeholder="*******" />
       </div>
       <div class="form-actions">
-        <button id="register-btn" class="msn-btn primary">Create Account</button>
-        <button id="goto-login" class="msn-btn">Back to Sign In</button>
+        <button id="register-btn" class="legacy-login-btn" type="button">register</button>
+      </div>
+      <div class="legacy-auth-links">
+        <button id="goto-login" class="legacy-link-btn" type="button">Login</button>
       </div>
       <p id="register-error" class="auth-error"></p>
     </div>
@@ -384,16 +390,18 @@
 
 <!-- ── CHAT WINDOW TEMPLATE ────────────────────────────── -->
 <template id="chat-window-tpl">
-  <div class="msn-window chat-window" data-conv-user="">
+  <div class="msn-window chat-window legacy-chat-window" data-conv-user="">
     <div class="msn-titlebar chat-titlebar">
       <span class="chat-partner-name win-title"></span>
       <div class="win-controls">
         <button class="win-btn close chat-close">×</button>
       </div>
     </div>
-    <div class="chat-header-bar">
-      <img class="chat-partner-avatar avatar-img" src="img/default-avatar.png" alt="" />
-      <div>
+    <div class="chat-header-bar legacy-chat-header first-section">
+      <div class="avatar-part">
+        <img class="chat-partner-avatar avatar-img" src="img/default-avatar.png" alt="" />
+      </div>
+      <div class="info-part">
         <div class="chat-partner-display"></div>
         <div class="chat-partner-status text-muted"></div>
       </div>

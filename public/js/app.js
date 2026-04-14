@@ -23,8 +23,14 @@ const isEmbeddedMode = window.self !== window.top;
 const isTabletViewport = () => window.matchMedia('(min-width: 768px) and (max-width: 1024px)').matches;
 const isMobileViewport = () => window.matchMedia('(max-width: 767px)').matches;
 const isEmbeddedCompact = () => isEmbeddedMode && window.matchMedia('(max-width: 760px)').matches;
-const isFixedPaneMode = () => isTabletViewport() || isMobileViewport() || isEmbeddedCompact();
-const isPaneSwitching = () => isMobileViewport() || isEmbeddedCompact();
+const isFixedPaneMode = () => {
+  if (isEmbeddedMode) return isEmbeddedCompact();
+  return isTabletViewport() || isMobileViewport();
+};
+const isPaneSwitching = () => {
+  if (isEmbeddedMode) return isEmbeddedCompact();
+  return isMobileViewport();
+};
 
 const TYPING_DEBOUNCE = 1500;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;

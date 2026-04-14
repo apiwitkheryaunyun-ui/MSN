@@ -52,6 +52,157 @@ const authScreen = $('auth-screen');
 const app = $('app');
 const loginPanel = $('login-panel');
 const registerPanel = $('register-panel');
+const promptStudioWindow = $('prompt-studio-window');
+
+const PROMPT_WORKFLOWS = {
+  engagement: {
+    label: 'Content Engagement',
+    description: 'Craft replies, caption ideas, and community-facing conversation starters that match your brand voice.',
+    build(fields) {
+      return [
+        `You are a senior social media strategist for ${fields.brand}.`,
+        `Create a content engagement playbook for ${fields.platform} aimed at ${fields.audience}.`,
+        `Voice and tone: ${fields.tone}.`,
+        `Primary goal: ${fields.goal}.`,
+        `Use this post or asset summary as the source material: ${fields.assetSummary}.`,
+        `Prioritize these response moments: ${fields.responsePriority}.`,
+        `Call to action to reinforce: ${fields.cta}.`,
+        `Guardrails: ${fields.constraints}.`,
+        `Output language: ${fields.language}.`,
+        'Return:',
+        '1. Three reply strategies for comments and DMs.',
+        '2. Eight on-brand sample replies with short rationale.',
+        '3. Three ways to re-engage silent followers.',
+        '4. A short escalation rule for questions that should move to sales or support.',
+      ].join('\n');
+    },
+  },
+  scheduled: {
+    label: 'Scheduled Posting',
+    description: 'Generate a calendar-minded prompt for batching posts, sequencing content, and aligning each slot to a campaign goal.',
+    build(fields) {
+      return [
+        `Act as a social content planner for ${fields.brand}.`,
+        `Design a scheduled posting plan for ${fields.platform} targeting ${fields.audience}.`,
+        `Campaign goal: ${fields.goal}.`,
+        `Brand tone: ${fields.tone}.`,
+        `Publishing window: ${fields.scheduleWindow}.`,
+        `Desired content mix: ${fields.contentMix}.`,
+        `Campaign context: ${fields.campaignContext}.`,
+        `CTA direction: ${fields.cta}.`,
+        `Guardrails: ${fields.constraints}.`,
+        `Output language: ${fields.language}.`,
+        'Return:',
+        '1. A posting calendar with date/theme/hook/format/CTA.',
+        '2. Suggested best posting times and why.',
+        '3. Asset checklist per post.',
+        '4. A fallback variant for underperforming posts.',
+      ].join('\n');
+    },
+  },
+  listening: {
+    label: 'Social Listening',
+    description: 'Summarize public sentiment, map response priorities, and prepare safe brand responses for emerging issues.',
+    build(fields) {
+      return [
+        `You are monitoring online conversation for ${fields.brand}.`,
+        `Analyze social listening signals from ${fields.platform} for ${fields.audience}.`,
+        `Current signal: ${fields.signal}.`,
+        `Risk level: ${fields.riskLevel}.`,
+        `Brand tone for responses: ${fields.tone}.`,
+        `Business objective: ${fields.goal}.`,
+        `Source notes: ${fields.sourceNotes}.`,
+        `Required safeguards: ${fields.constraints}.`,
+        `Output language: ${fields.language}.`,
+        'Return:',
+        '1. A sentiment summary with likely root causes.',
+        '2. Priority segments to respond to first.',
+        '3. Six brand-safe public response drafts.',
+        '4. Escalation guidance for legal, support, and PR teams.',
+      ].join('\n');
+    },
+  },
+  influencer: {
+    label: 'Influencer Research',
+    description: 'Build a scouting prompt for finding creators who fit your market, budget, and credibility requirements.',
+    build(fields) {
+      return [
+        `Act as an influencer research lead for ${fields.brand}.`,
+        `Find creator opportunities for ${fields.platform} targeting ${fields.audience}.`,
+        `Campaign goal: ${fields.goal}.`,
+        `Preferred brand tone: ${fields.tone}.`,
+        `Creator niche: ${fields.niche}.`,
+        `Region: ${fields.region}.`,
+        `Budget or scale guidance: ${fields.budget}.`,
+        `Selection criteria: ${fields.selectionCriteria}.`,
+        `Guardrails: ${fields.constraints}.`,
+        `Output language: ${fields.language}.`,
+        'Return:',
+        '1. A creator qualification scorecard.',
+        '2. Ten search filters or discovery queries.',
+        '3. A table structure for comparing creators.',
+        '4. Outreach angle suggestions and fraud-risk checks.',
+      ].join('\n');
+    },
+  },
+};
+
+const PROMPT_SEEDS = {
+  engagement: {
+    workflow: 'engagement',
+    brand: 'Contoso Skincare',
+    platform: 'Instagram + TikTok',
+    audience: 'Thai Gen Z skincare shoppers',
+    tone: 'Friendly, smart, fast, reassuring',
+    goal: 'Increase comments, saves, and qualified product questions',
+    language: 'Thai + English',
+    assetSummary: 'A short-form video debunking sunscreen myths with dermatologist-backed facts.',
+    cta: 'Invite followers to share their sunscreen struggles in comments',
+    responsePriority: 'Product objections, acne-prone questions, purchase-intent comments',
+    constraints: 'No medical claims, avoid sounding salesy, keep replies under 45 words',
+  },
+  scheduled: {
+    workflow: 'scheduled',
+    brand: 'Northwind Travel',
+    platform: 'Facebook + Instagram',
+    audience: 'Young professionals planning long-weekend trips',
+    tone: 'Energetic, polished, discovery-focused',
+    goal: 'Drive itinerary downloads and DM inquiries',
+    language: 'English',
+    scheduleWindow: 'Next 2 weeks, 4 posts per week',
+    contentMix: 'Destination reels, carousel tips, customer testimonials, story reminders',
+    campaignContext: 'Promoting curated weekend trips with limited-time booking perks.',
+    cta: 'Push users toward DM for quote and itinerary link',
+    constraints: 'Keep captions under 110 words, one CTA per post, no repeated hooks',
+  },
+  listening: {
+    workflow: 'listening',
+    brand: 'Fabrikam Delivery',
+    platform: 'X, Facebook comments, Reddit mentions',
+    audience: 'Urban users ordering same-day groceries',
+    tone: 'Calm, accountable, precise',
+    goal: 'Reduce churn risk and respond quickly to shipping frustration',
+    language: 'Thai',
+    signal: 'Sudden rise in complaints about late deliveries after a warehouse move',
+    riskLevel: 'High',
+    sourceNotes: 'Users mention cold items arriving late, support response delays, and promo code errors.',
+    constraints: 'Acknowledge issue clearly, avoid blame, never promise compensation before verification',
+  },
+  influencer: {
+    workflow: 'influencer',
+    brand: 'Adventure Works Outdoors',
+    platform: 'YouTube Shorts + TikTok',
+    audience: 'Entry-level hikers and trail runners in Thailand',
+    tone: 'Credible, rugged, helpful',
+    goal: 'Identify trustworthy creators for a product seeding campaign',
+    language: 'English',
+    niche: 'Outdoor creators, hiking educators, trail gear reviewers',
+    budget: 'Micro to mid-tier creators, total budget under 80k THB',
+    region: 'Thailand',
+    selectionCriteria: 'Good comment quality, visible trail experience, low fake-engagement risk, audience fit',
+    constraints: 'Exclude creators with poor disclosure habits or unrelated luxury content',
+  },
+};
 
 const directKey = (userId) => `direct:${userId}`;
 const groupKey = (conversationId) => `group:${conversationId}`;
@@ -190,6 +341,126 @@ function syncResponsiveState() {
   if (!isPaneSwitching()) {
     document.body.classList.remove('mobile-chat-open');
   }
+  if (!promptStudioWindow?.classList.contains('hidden') && isPaneSwitching()) {
+    document.body.classList.add('mobile-chat-open');
+  }
+}
+
+function getPromptFields() {
+  return {
+    brand: $('prompt-brand').value.trim() || 'the brand',
+    platform: $('prompt-platform').value.trim() || 'the target platform',
+    audience: $('prompt-audience').value.trim() || 'the intended audience',
+    tone: $('prompt-tone').value.trim() || 'clear and brand-aligned',
+    goal: $('prompt-goal').value.trim() || 'improve engagement and business outcomes',
+    language: $('prompt-language').value,
+    assetSummary: $('prompt-asset-summary')?.value.trim() || 'No specific asset summary provided.',
+    cta: $('prompt-cta')?.value.trim() || 'Use a relevant CTA.',
+    responsePriority: $('prompt-response-priority')?.value.trim() || 'Questions, objections, and high-intent comments',
+    scheduleWindow: $('prompt-schedule-window')?.value.trim() || 'the next publishing cycle',
+    contentMix: $('prompt-content-mix')?.value.trim() || 'a balanced mix of formats',
+    campaignContext: $('prompt-campaign-context')?.value.trim() || 'No extra campaign context provided.',
+    signal: $('prompt-signal')?.value.trim() || 'General brand chatter',
+    riskLevel: $('prompt-risk-level')?.value || 'Moderate',
+    sourceNotes: $('prompt-source-notes')?.value.trim() || 'No detailed source notes provided.',
+    niche: $('prompt-niche')?.value.trim() || 'relevant creators',
+    budget: $('prompt-budget')?.value.trim() || 'flexible budget',
+    region: $('prompt-region')?.value.trim() || 'target region not specified',
+    selectionCriteria: $('prompt-selection-criteria')?.value.trim() || 'Audience fit, credibility, and performance quality',
+    constraints: $('prompt-constraints').value.trim() || 'Keep it on-brand and practical.',
+  };
+}
+
+function renderPromptOutput(text) {
+  $('prompt-output').value = text;
+  $('prompt-output-status').textContent = `Generated ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+function setPromptWorkflow(workflow) {
+  const config = PROMPT_WORKFLOWS[workflow] || PROMPT_WORKFLOWS.engagement;
+  promptStudioWindow.dataset.workflow = workflow;
+  document.querySelectorAll('.prompt-nav-btn').forEach((button) => {
+    button.classList.toggle('active', button.dataset.workflow === workflow);
+  });
+  document.querySelectorAll('[data-workflow-panel]').forEach((panel) => {
+    panel.classList.toggle('hidden', panel.dataset.workflowPanel !== workflow);
+  });
+  $('prompt-studio-title-copy').textContent = config.label;
+  $('prompt-studio-description').textContent = config.description;
+}
+
+function clearPromptBrief() {
+  $('prompt-studio-form').reset();
+  setPromptWorkflow('engagement');
+  $('prompt-output').value = '';
+  $('prompt-output-status').textContent = 'Ready to generate';
+}
+
+function applyPromptSeed(seedName) {
+  const seed = PROMPT_SEEDS[seedName];
+  if (!seed) return;
+  clearPromptBrief();
+  setPromptWorkflow(seed.workflow);
+  Object.entries(seed).forEach(([key, value]) => {
+    const field = $(`prompt-${key.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`)}`);
+    if (!field) return;
+    field.value = value;
+  });
+  renderPromptOutput(PROMPT_WORKFLOWS[seed.workflow].build(getPromptFields()));
+}
+
+function openPromptStudio() {
+  promptStudioWindow.classList.remove('hidden');
+  bumpWindowToFront(promptStudioWindow);
+  if (isPaneSwitching()) {
+    document.body.classList.add('mobile-chat-open');
+  }
+}
+
+function closePromptStudio() {
+  promptStudioWindow.classList.add('hidden');
+  if (isPaneSwitching()) {
+    document.body.classList.remove('mobile-chat-open');
+  }
+}
+
+function setupPromptStudio() {
+  if (!promptStudioWindow || setupPromptStudio._ready) return;
+  setupPromptStudio._ready = true;
+  setPromptWorkflow('engagement');
+
+  $('prompt-studio-toggle').onclick = () => openPromptStudio();
+  $('prompt-studio-close').onclick = () => closePromptStudio();
+  promptStudioWindow.addEventListener('pointerdown', () => bumpWindowToFront(promptStudioWindow));
+
+  document.querySelectorAll('.prompt-nav-btn').forEach((button) => {
+    button.onclick = () => setPromptWorkflow(button.dataset.workflow);
+  });
+
+  document.querySelectorAll('.prompt-seed-btn').forEach((button) => {
+    button.onclick = () => applyPromptSeed(button.dataset.seed);
+  });
+
+  $('prompt-studio-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const workflow = promptStudioWindow.dataset.workflow || 'engagement';
+    renderPromptOutput(PROMPT_WORKFLOWS[workflow].build(getPromptFields()));
+  });
+
+  $('prompt-reset-btn').onclick = () => clearPromptBrief();
+  $('prompt-copy-btn').onclick = async () => {
+    const output = $('prompt-output').value.trim();
+    if (!output) {
+      toast('Generate a prompt before copying');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(output);
+      toast('Copied prompt to clipboard');
+    } catch {
+      toast('Copy failed');
+    }
+  };
 }
 
 function statusClass(status) {
@@ -375,6 +646,7 @@ async function startApp() {
   }
   initAeroBubbles();
   initButtonRipple();
+  setupPromptStudio();
   hydrateTooltips(document);
   setProfileFields();
   await Promise.all([loadSettings(), loadWebrtcConfig(), loadFriends(), loadGroups(), loadPendingRequests()]);
@@ -1338,6 +1610,7 @@ if (isEmbeddedMode) {
 } else {
   if (!isFixedPaneMode()) {
     makeDraggable($('buddy-window'), $('buddy-window').querySelector('.msn-titlebar'));
+    if (promptStudioWindow) makeDraggable(promptStudioWindow, promptStudioWindow.querySelector('.prompt-studio-titlebar'));
   }
 }
 

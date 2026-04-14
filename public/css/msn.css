@@ -980,9 +980,26 @@ body.embedded-msn .chat-window {
   box-shadow: none;
 }
 
+body.embedded-msn .prompt-studio-window {
+  position: absolute;
+  inset: 0 0 0 280px;
+  width: auto;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  border: 0;
+  border-left: 1px solid #8eaed8;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 body.embedded-msn .msn-titlebar,
 body.embedded-msn .chat-titlebar {
   display: none;
+}
+
+body.embedded-msn .prompt-studio-titlebar {
+  display: flex;
 }
 
 body.embedded-msn .chat-messages {
@@ -1005,6 +1022,11 @@ body.embedded-msn .embedded-close-btn {
 
   body.embedded-msn .buddy-window {
     border-right: 0;
+  }
+
+  body.embedded-msn .prompt-studio-window {
+    inset: 0;
+    border-left: 0;
   }
 
   /* Single-pane switching: show buddy list by default, chat when mobile-chat-open */
@@ -1121,6 +1143,208 @@ body.embedded-msn .embedded-close-btn {
   font-size: 10px;
 }
 
+.prompt-studio-window {
+  top: 72px;
+  left: 332px;
+  width: min(880px, calc(100vw - 36px));
+  min-height: 560px;
+  max-height: calc(100vh - 96px);
+  z-index: 260;
+  overflow: hidden;
+}
+
+.prompt-studio-shell {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  min-height: 520px;
+  height: 100%;
+}
+
+.prompt-studio-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 10px;
+  background: linear-gradient(180deg, #d7e7fb 0%, #c4d9f7 100%);
+  border-right: 1px solid #91add4;
+}
+
+.prompt-studio-badge {
+  align-self: flex-start;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid #4c79b8;
+  background: linear-gradient(180deg, #fff7c8 0%, #ffd96d 100%);
+  color: #594000;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.prompt-nav-btn {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #87a7cf;
+  border-radius: 4px;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, #f9fcff 0%, #ddeafc 100%);
+  color: #143055;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 1px 2px rgba(24,59,107,.08);
+}
+
+.prompt-nav-btn.active {
+  background: linear-gradient(180deg, #5db1ff 0%, #2f86eb 55%, #1f6dd2 100%);
+  border-color: #0c4d9d;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 38, 91, .75);
+}
+
+.prompt-studio-note {
+  margin-top: auto;
+  padding: 10px;
+  border: 1px solid rgba(104, 132, 175, .55);
+  border-radius: 6px;
+  background: rgba(255,255,255,.66);
+  color: #264061;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.prompt-studio-note p {
+  margin: 4px 0 0;
+}
+
+.prompt-studio-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: linear-gradient(180deg, #eef5ff 0%, #dbe8fb 100%);
+}
+
+.prompt-studio-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #97b3db;
+  background: linear-gradient(180deg, rgba(255,255,255,.8) 0%, rgba(219,233,252,.85) 100%);
+}
+
+.prompt-seed-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.prompt-seed-label {
+  color: #315077;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.prompt-seed-btn {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  flex-basis: 28px;
+}
+
+.prompt-form {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prompt-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.prompt-grid-detail {
+  padding: 10px;
+  border: 1px solid rgba(124, 151, 194, .55);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255,255,255,.85) 0%, rgba(236,243,253,.88) 100%);
+}
+
+.prompt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #24405e;
+  font-size: 10px;
+}
+
+.prompt-field span {
+  font-weight: 700;
+}
+
+.prompt-field input,
+.prompt-field select,
+.prompt-field textarea,
+.prompt-output {
+  border: 2px solid;
+  border-color: #b0c4e0 #6090c8 #6090c8 #b0c4e0;
+  border-radius: 2px;
+  padding: 5px 6px;
+  font-family: inherit;
+  font-size: 11px;
+  background: #ffffff;
+  outline: none;
+  resize: vertical;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.6);
+}
+
+.prompt-field input:focus,
+.prompt-field select:focus,
+.prompt-field textarea:focus {
+  border-color: #4090d8 #0060b8 #0060b8 #4090d8;
+}
+
+.prompt-field-wide {
+  grid-column: 1 / -1;
+}
+
+.prompt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.prompt-output-panel {
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  flex: 1;
+}
+
+.prompt-output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  color: #27456a;
+  font-size: 10px;
+}
+
+.prompt-output {
+  width: 100%;
+  min-height: 220px;
+  line-height: 1.5;
+  color: #122844;
+  background: linear-gradient(180deg, #ffffff 0%, #f2f7ff 100%);
+}
+
 .group-composer {
   padding: 8px;
   background: linear-gradient(180deg, #f4f7ff 0%, #e5edf9 100%);
@@ -1218,6 +1442,18 @@ body.embedded-msn .embedded-close-btn {
     width: min(90vw, 280px);
     min-height: auto;
     max-height: 600px;
+  }
+
+  .prompt-studio-window {
+    width: calc(100vw - 24px);
+    left: auto;
+    top: auto;
+    margin: 12px;
+    min-height: 0;
+  }
+
+  .prompt-studio-shell {
+    grid-template-columns: 180px minmax(0, 1fr);
   }
 
   .chat-window {
@@ -1537,6 +1773,67 @@ body.embedded-msn .embedded-close-btn {
   .group-member-list {
     max-height: 100px;
   }
+
+  .prompt-studio-window {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    border-radius: 0;
+    left: 0 !important;
+    top: 0 !important;
+  }
+
+  .prompt-studio-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    min-height: 0;
+  }
+
+  .prompt-studio-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid #91add4;
+    padding: 8px 6px;
+  }
+
+  .prompt-studio-note {
+    margin-top: 0;
+  }
+
+  .prompt-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .prompt-studio-toolbar,
+  .prompt-form,
+  .prompt-output-panel {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .prompt-studio-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .prompt-toolbar-actions,
+  .prompt-actions {
+    display: flex;
+    justify-content: stretch;
+  }
+
+  .prompt-toolbar-actions .msn-btn,
+  .prompt-actions .msn-btn {
+    flex: 1;
+  }
+
+  .prompt-output {
+    min-height: 180px;
+  }
 }
 
 /* Layout hardening for mobile/tablet usability */
@@ -1722,5 +2019,9 @@ body {
   body:not(.embedded-msn) .my-status-msg,
   body:not(.embedded-msn) .group-bar-text {
     display: none;
+  }
+
+  body:not(.embedded-msn) .prompt-studio-window {
+    z-index: 360;
   }
 }

@@ -149,6 +149,7 @@
 
     <div class="group-bar">
       <button id="toggle-group-composer" class="msn-btn small">New Group</button>
+      <button id="prompt-studio-toggle" class="msn-btn small" type="button">Prompt Studio</button>
       <span class="group-bar-text">Create shared chats with your contacts</span>
     </div>
 
@@ -179,6 +180,169 @@
 
     <!-- Notifications popup -->
     <div id="notification-toast" class="notification-toast hidden"></div>
+  </div>
+
+  <div id="prompt-studio-window" class="msn-window prompt-studio-window hidden">
+    <div class="msn-titlebar prompt-studio-titlebar">
+      <span class="win-title">MSN Social Media Prompt Studio</span>
+      <div class="win-controls">
+        <button class="win-btn close" id="prompt-studio-close" title="Close studio">×</button>
+      </div>
+    </div>
+    <div class="prompt-studio-shell">
+      <aside class="prompt-studio-sidebar">
+        <div class="prompt-studio-badge">BETA</div>
+        <button class="prompt-nav-btn active" type="button" data-workflow="engagement">Content Engagement</button>
+        <button class="prompt-nav-btn" type="button" data-workflow="scheduled">Scheduled Posting</button>
+        <button class="prompt-nav-btn" type="button" data-workflow="listening">Social Listening</button>
+        <button class="prompt-nav-btn" type="button" data-workflow="influencer">Influencer Research</button>
+        <div class="prompt-studio-note">
+          <strong id="prompt-studio-title-copy">Content Engagement</strong>
+          <p id="prompt-studio-description">Craft replies, caption ideas, and community-facing conversation starters that match your brand voice.</p>
+        </div>
+      </aside>
+      <div class="prompt-studio-main">
+        <div class="prompt-studio-toolbar">
+          <div class="prompt-seed-row">
+            <span class="prompt-seed-label">Quick brief:</span>
+            <button class="chat-mini-btn prompt-seed-btn" type="button" data-seed="engagement" title="Load engagement example">💬</button>
+            <button class="chat-mini-btn prompt-seed-btn" type="button" data-seed="scheduled" title="Load scheduled post example">🗓</button>
+            <button class="chat-mini-btn prompt-seed-btn" type="button" data-seed="listening" title="Load social listening example">📡</button>
+            <button class="chat-mini-btn prompt-seed-btn" type="button" data-seed="influencer" title="Load influencer research example">⭐</button>
+          </div>
+          <div class="prompt-toolbar-actions">
+            <button id="prompt-copy-btn" class="msn-btn small" type="button">Copy Prompt</button>
+          </div>
+        </div>
+
+        <form id="prompt-studio-form" class="prompt-form" autocomplete="off">
+          <div class="prompt-grid">
+            <label class="prompt-field">
+              <span>Brand / Client</span>
+              <input id="prompt-brand" type="text" placeholder="Contoso Skincare" />
+            </label>
+            <label class="prompt-field">
+              <span>Platform</span>
+              <input id="prompt-platform" type="text" placeholder="Instagram Reels, X, TikTok" />
+            </label>
+            <label class="prompt-field">
+              <span>Audience</span>
+              <input id="prompt-audience" type="text" placeholder="Gen Z beauty shoppers in Bangkok" />
+            </label>
+            <label class="prompt-field">
+              <span>Tone</span>
+              <input id="prompt-tone" type="text" placeholder="Playful, informed, quick-witted" />
+            </label>
+            <label class="prompt-field">
+              <span>Primary Goal</span>
+              <input id="prompt-goal" type="text" placeholder="Boost saves and qualified replies" />
+            </label>
+            <label class="prompt-field">
+              <span>Output Language</span>
+              <select id="prompt-language">
+                <option value="Thai">Thai</option>
+                <option value="English">English</option>
+                <option value="Thai + English">Thai + English</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="prompt-workflow-panel" data-workflow-panel="engagement">
+            <div class="prompt-grid prompt-grid-detail">
+              <label class="prompt-field prompt-field-wide">
+                <span>Post / Asset Summary</span>
+                <textarea id="prompt-asset-summary" rows="3" placeholder="A carousel about sunscreen myths with dermatologist quotes and before/after visuals."></textarea>
+              </label>
+              <label class="prompt-field">
+                <span>CTA</span>
+                <input id="prompt-cta" type="text" placeholder="Ask followers to comment with their skin type" />
+              </label>
+              <label class="prompt-field">
+                <span>Response Priority</span>
+                <input id="prompt-response-priority" type="text" placeholder="Questions, objections, high-intent leads" />
+              </label>
+            </div>
+          </div>
+
+          <div class="prompt-workflow-panel hidden" data-workflow-panel="scheduled">
+            <div class="prompt-grid prompt-grid-detail">
+              <label class="prompt-field">
+                <span>Publishing Window</span>
+                <input id="prompt-schedule-window" type="text" placeholder="Next 14 days, posting Tue/Thu/Sat" />
+              </label>
+              <label class="prompt-field">
+                <span>Content Mix</span>
+                <input id="prompt-content-mix" type="text" placeholder="2 reels, 1 carousel, 1 story burst per week" />
+              </label>
+              <label class="prompt-field prompt-field-wide">
+                <span>Campaign Context</span>
+                <textarea id="prompt-campaign-context" rows="3" placeholder="New serum launch with creator clips, promo code, and testimonial screenshots."></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="prompt-workflow-panel hidden" data-workflow-panel="listening">
+            <div class="prompt-grid prompt-grid-detail">
+              <label class="prompt-field">
+                <span>Conversation Signal</span>
+                <input id="prompt-signal" type="text" placeholder="Spike in complaints about shipping delays" />
+              </label>
+              <label class="prompt-field">
+                <span>Risk Level</span>
+                <select id="prompt-risk-level">
+                  <option value="Low">Low</option>
+                  <option value="Moderate">Moderate</option>
+                  <option value="High">High</option>
+                </select>
+              </label>
+              <label class="prompt-field prompt-field-wide">
+                <span>Source Notes</span>
+                <textarea id="prompt-source-notes" rows="3" placeholder="Top complaints, competitor comparisons, sentiment keywords, escalation triggers."></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="prompt-workflow-panel hidden" data-workflow-panel="influencer">
+            <div class="prompt-grid prompt-grid-detail">
+              <label class="prompt-field">
+                <span>Niche / Creator Type</span>
+                <input id="prompt-niche" type="text" placeholder="Skincare educators, beauty reviewers, campus creators" />
+              </label>
+              <label class="prompt-field">
+                <span>Budget / Scale</span>
+                <input id="prompt-budget" type="text" placeholder="Mid-tier creators, 25k-60k THB total" />
+              </label>
+              <label class="prompt-field">
+                <span>Region</span>
+                <input id="prompt-region" type="text" placeholder="Thailand, Bangkok + Chiang Mai" />
+              </label>
+              <label class="prompt-field prompt-field-wide">
+                <span>Selection Criteria</span>
+                <textarea id="prompt-selection-criteria" rows="3" placeholder="Prioritize creators with high saves, creator integrity, skincare literacy, and authentic comments."></textarea>
+              </label>
+            </div>
+          </div>
+
+          <label class="prompt-field prompt-field-wide">
+            <span>Guardrails / Must Include</span>
+            <textarea id="prompt-constraints" rows="3" placeholder="Avoid medical claims, keep copy under 120 words, mention promo code once, do not sound robotic."></textarea>
+          </label>
+
+          <div class="prompt-actions">
+            <button id="prompt-generate-btn" class="msn-btn primary" type="submit">Generate Prompt</button>
+            <button id="prompt-reset-btn" class="msn-btn" type="button">Clear Brief</button>
+          </div>
+        </form>
+
+        <div class="prompt-output-panel">
+          <div class="prompt-output-header">
+            <strong>Prompt Output</strong>
+            <span id="prompt-output-status">Ready to generate</span>
+          </div>
+          <textarea id="prompt-output" class="prompt-output" rows="14" readonly placeholder="Your MSN-style social media prompt will appear here."></textarea>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ── CHAT WINDOWS CONTAINER ──────────────────────────── -->
